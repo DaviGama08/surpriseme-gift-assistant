@@ -49,7 +49,7 @@ Gift-giving is a deeply ingrained social practice, but finding the perfect gift 
 
 Our team identified this recurring problem through user feedback and market research (well let’s face it… ourselves, our close friends and relatives), which showed that people delay gift purchases due to indecision or resort to generic, impersonal gifts just due to the need of offering something. Previous attempts to address this problem included static recommendation lists and simple filtering tools on e-commerce platforms. However, these solutions lacked personalization, requiring users to manually browse through countless options. 
 
-After evaluating these shortcomings, we concluded that a more intelligent, context-aware solution was needed. The decision was made to build an application powered by artificial intelligence that can learn user preferences, analyze recipient characteristics, and generate thoughtful gift recommendations. This approach promises to save users time, reduce stress, and improve the overall gift-giving experience by providing tailored suggestions that feel personal and meaningful. 
+After evaluating these shortcomings, we concluded that a more intelligent, context-aware solution was needed. The decision was made to build an application powered by a language model that can analyze recipient characteristics and generate gift recommendations from the information supplied for each request. The current prototype does not train on or automatically reuse historical feedback.
 
 #### Stakeholders
 
@@ -93,7 +93,7 @@ By solving a widespread and relatable problem, this application has the potentia
 
 * AI-Powered Giftcard Message Recommendation Engine: Generates personalized, occasion-specific messages tailored to each Enjoyer’s profile and relationship.
 
-* Gift History Tracking: Comprehensive logging system that records all gifts given, including Enjoyer, occasion, and satisfaction feedback (liked/disliked), enabling the AI to learn from past experiences and improve future recommendations.
+* Gift History Tracking: Comprehensive local record of gifts, including Enjoyer, occasion and satisfaction feedback (liked/disliked). The feedback is available for user reference but is not currently included in recommendation prompts.
 
 * Data Persistence and Sync: Local data storage system that maintains user profiles, Enjoyers information, gift history, and preferences across application sessions, ensuring continuity and personalization over time.
 
@@ -770,7 +770,7 @@ Supported gift types include:
 - Do-it-yourself gifts;
 - Any suitable type.
 
-The application requests four suggestions from the configured language-model provider.
+After an explicit confirmation, the application requests four suggestions from the configured language-model provider.
 
 ### Suggestion Review
 
@@ -919,6 +919,8 @@ Application state is stored under the current user's home directory:
 ~/.surprise_me/data.spm
 ```
 
+For tests or isolated demonstrations, override the directory with the `surpriseme.data.dir` JVM property or the `SURPRISEME_DATA_DIR` environment variable. Maven tests use `target/test-data` and do not read or overwrite the user's normal data file.
+
 The file can contain:
 
 - Local accounts;
@@ -931,7 +933,7 @@ Do not share this file or add it to version control.
 
 ## Privacy
 
-When a suggestion is generated, selected recipient information can be sent to the configured external language-model provider.
+Before a suggestion is generated, the interface asks for consent to send the selected recipient information to the configured external language-model provider. Cancelling leaves the provider uncalled.
 
 Depending on the profile and criteria, this may include:
 
@@ -965,20 +967,15 @@ Use fictional information for demonstrations and do not enter sensitive personal
 
 ```text
 src/
-├── main/
-│   ├── java/
-│   │   └── pt/isec/gps2526_g42/surprise_me/
-│   │       ├── config/
-│   │       ├── model/
-│   │       │   ├── data/
-│   │       │   └── llm/
-│   │       ├── security/
-│   │       └── ui/
-│   └── resources/
-│       └── pt/isec/gps2526_g42/surprise_me/ui/res/
-└── test/
-    └── java/
-        └── pt/isec/gps2526_g42/surprise_me/
+|-- main/
+|   |-- java/pt/isec/gps2526_g42/surprise_me/
+|   |   |-- model/
+|   |   |   |-- data/
+|   |   |   |-- llm/
+|   |   |   `-- security/
+|   |   `-- ui/
+|   `-- resources/pt/isec/gps2526_g42/surprise_me/ui/res/
+`-- test/java/pt/isec/gps2526_g42/surprise_me/
 ```
 
 ## Requirements
@@ -986,8 +983,9 @@ src/
 Install:
 
 - JDK 21;
-- Apache Maven 3.9 or newer;
-- An API key for a compatible language-model provider.
+- Apache Maven 3.9 or newer.
+
+An API key is needed only when making a real generation request. Building and testing do not require one.
 
 Check the installation:
 
@@ -1003,7 +1001,7 @@ Set the required environment variables.
 ### PowerShell
 
 ```powershell
-$env:GROQ_API_KEY = "YOUR_API_KEY"
+$env:SURPRISEME_LLM_API_KEY = "YOUR_API_KEY"
 $env:SURPRISEME_LLM_MODEL = "MODEL_ID_AVAILABLE_IN_YOUR_ACCOUNT"
 $env:SURPRISEME_LLM_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 ```
@@ -1011,12 +1009,12 @@ $env:SURPRISEME_LLM_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 ### Linux or macOS
 
 ```bash
-export GROQ_API_KEY="YOUR_API_KEY"
+export SURPRISEME_LLM_API_KEY="YOUR_API_KEY"
 export SURPRISEME_LLM_MODEL="MODEL_ID_AVAILABLE_IN_YOUR_ACCOUNT"
 export SURPRISEME_LLM_ENDPOINT="https://api.groq.com/openai/v1/chat/completions"
 ```
 
-Never commit API keys.
+Never commit API keys. A secret embedded in a distributed desktop client can be extracted; use only a restricted demonstration credential locally. A production distribution should call a controlled backend that owns the provider credential.
 
 ## Running
 
@@ -1068,7 +1066,9 @@ The test suite covers areas such as:
 - Gift criteria;
 - Prompt generation.
 
-The LLM provider should be replaced by a fake implementation in automated tests so that tests remain deterministic and do not consume an external API.
+Automated tests inject a fake `LlmClient`, so they remain deterministic, require no credential and never call the external provider. The suite also covers consent denial and PBKDF2 password verification.
+
+GitHub Actions runs `mvn clean verify` on Linux and Windows without repository secrets.
 
 ## Development Process
 
@@ -1097,6 +1097,7 @@ A user story was considered complete only after implementation, peer review, QA 
 - Suggestions may contain hallucinations or unavailable products;
 - Historical feedback is not currently used in future prompts;
 - Data is stored locally through Java serialization;
+- Local passwords use salted PBKDF2 hashes; a successful login transparently migrates legacy SHA-3 or plaintext records;
 - Accounts are local rather than cloud-based;
 - There is no e-commerce integration;
 - There are no purchase links or real-time prices;
