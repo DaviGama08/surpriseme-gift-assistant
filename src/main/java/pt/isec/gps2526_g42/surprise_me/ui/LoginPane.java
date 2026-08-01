@@ -15,10 +15,6 @@ import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeManager;
 import pt.isec.gps2526_g42.surprise_me.ui.res.FontManager;
 import pt.isec.gps2526_g42.surprise_me.ui.res.ImageManager;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 import static pt.isec.gps2526_g42.surprise_me.ui.UIPropertyChangeManager.PROP_SHOW_DASHBOARD;
 import static pt.isec.gps2526_g42.surprise_me.ui.UIPropertyChangeManager.PROP_SHOW_REGISTER;
 
@@ -144,7 +140,7 @@ public class LoginPane extends HBox {
         signUpText.setOnMouseClicked(e -> UIPropertyChangeManager.getInstance().firePropertyChange(PROP_SHOW_REGISTER, null, null));
 
         logInButton.setOnAction(e -> {
-            if(manager.login(emailField.getText().trim(), encrypt(passwordField.getText().trim()))) {
+            if(manager.login(emailField.getText().trim(), passwordField.getText())) {
                 UIPropertyChangeManager.getInstance().firePropertyChange(PROP_SHOW_DASHBOARD, null, null);
             } else {
                 loginErrorText.setText("Wrong email or password. Try again.");
@@ -164,29 +160,4 @@ public class LoginPane extends HBox {
         logInButton.setDisable(!(emailOK && passOK && termsOK));
     }
 
-    // Function to encript password
-    private String encrypt(String password) {
-        String encryptedPassword = null;
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA3-256");
-            byte[] hashbytes = digest.digest(password.getBytes(StandardCharsets.UTF_8));
-            encryptedPassword = bytesToHex(hashbytes);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return encryptedPassword;
-    }
-
-    // Function to convert hash to hexadecimal
-    private String bytesToHex(byte[] hash) {
-        StringBuilder hexString = new StringBuilder(2 * hash.length);
-        for (int i = 0; i < hash.length; i++) {
-            String hex = Integer.toHexString(0xff & hash[i]);
-            if (hex.length() == 1) {
-                hexString.append('0');
-            }
-            hexString.append(hex);
-        }
-        return hexString.toString();
-    }
 }

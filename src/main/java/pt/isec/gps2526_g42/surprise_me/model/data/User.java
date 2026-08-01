@@ -72,8 +72,12 @@ public class User implements Serializable {
         return userDetails.getEmail();
     }
 
-    String getPassword() {
-        return userDetails.getPassword();
+    String getPasswordHash() {
+        return userDetails.getPasswordHash();
+    }
+
+    void setPasswordHash(String passwordHash) {
+        userDetails.setPasswordHash(passwordHash);
     }
 
     UserDetails getUserDetails() {

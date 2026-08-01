@@ -4,6 +4,7 @@ import pt.isec.gps2526_g42.surprise_me.model.Feedback;
 import pt.isec.gps2526_g42.surprise_me.model.Occasion;
 import pt.isec.gps2526_g42.surprise_me.model.Status;
 import pt.isec.gps2526_g42.surprise_me.model.Type;
+import pt.isec.gps2526_g42.surprise_me.model.security.PasswordHasher;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -53,9 +54,13 @@ public class SurpriseMe implements Serializable {
     /* --- METHODS FOR USER --- */
 
     boolean login(String email, String password) {
-        if (loggedUser == -1) {
+        if (loggedUser == -1 && email != null && password != null) {
             for (User user : users.values()) {
-                if (user.getEmail().equals(email) && user.getPassword().equals(password)) {
+                String storedHash = user.getPasswordHash();
+                if (user.getEmail().equalsIgnoreCase(email.trim()) && PasswordHasher.verify(password, storedHash)) {
+                    if (PasswordHasher.needsRehash(storedHash)) {
+                        user.setPasswordHash(PasswordHasher.hash(password));
+                    }
                     loggedUser = user.getIdUser();
                     return true;
                 }
@@ -65,13 +70,14 @@ public class SurpriseMe implements Serializable {
     }
 
     boolean register(String name, String email, String password) {
-        if (loggedUser == -1) {
+        if (loggedUser == -1 && name != null && !name.isBlank() && email != null && !email.isBlank()
+                && password != null && !password.isBlank()) {
             for (User user : users.values()) {
-                if (user.getEmail().equals(email)) {
+                if (user.getEmail().equalsIgnoreCase(email.trim())) {
                     return false;
                 }
             }
-            User newUser = new User(name, email, password);
+            User newUser = new User(name.trim(), email.trim(), PasswordHasher.hash(password));
             users.put(newUser.getIdUser(), newUser);
             loggedUser = newUser.getIdUser();
             return true;
