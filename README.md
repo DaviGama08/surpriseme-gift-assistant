@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Project Title
 
 ## Contents
@@ -1160,6 +1159,3 @@ The source code is available for portfolio and educational review. Reuse, modifi
 <div align="center">
 
 Developed as a collaborative Java desktop and agile software project.
-
-</div>
->>>>>>> d34202ea7992335bb5af51f9302d2b85da5b1c0a
