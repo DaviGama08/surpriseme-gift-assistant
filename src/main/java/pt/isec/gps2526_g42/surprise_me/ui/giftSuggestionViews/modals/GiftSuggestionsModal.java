@@ -39,6 +39,7 @@ public class GiftSuggestionsModal extends Stage {
     private final String selectedTypeLabel;
     private final String selectedOccasionLabel;
     private final GiftCriteria baseCriteria;
+    private final boolean consentGranted;
 
     private final VBox contentPane = new VBox();
     private Label headerLabel;
@@ -53,7 +54,9 @@ public class GiftSuggestionsModal extends Stage {
     private static final int SUGGESTIONS_VIEW_WIDTH = 750;
     private static final int DETAILS_VIEW_WIDTH = 720;
 
-    public GiftSuggestionsModal(SurpriseMeManager manager, Integer enjoyerId, EnjoyerDetails enjoyer, String enjoyerDescription, String selectedTypeLabel, String selectedOccasionLabel, String rawSuggestions, GiftCriteria baseCriteria) {
+    public GiftSuggestionsModal(SurpriseMeManager manager, Integer enjoyerId, EnjoyerDetails enjoyer,
+                                String enjoyerDescription, String selectedTypeLabel, String selectedOccasionLabel,
+                                String rawSuggestions, GiftCriteria baseCriteria, boolean consentGranted) {
         this.manager = manager;
         this.enjoyerId = enjoyerId;
         this.enjoyer = enjoyer;
@@ -61,6 +64,7 @@ public class GiftSuggestionsModal extends Stage {
         this.selectedTypeLabel = selectedTypeLabel;
         this.selectedOccasionLabel = selectedOccasionLabel;
         this.baseCriteria = baseCriteria;
+        this.consentGranted = consentGranted;
         String rs = rawSuggestions == null ? "" : rawSuggestions;
         initStyle(StageStyle.TRANSPARENT);
         initModality(Modality.WINDOW_MODAL);
@@ -243,10 +247,10 @@ public class GiftSuggestionsModal extends Stage {
 
                         if (enjoyer != null) {
                             // For enjoyer-based gifts, use a personalized message
-                            generatedMessage = manager.generateGiftMessage(s.title(), s.description(), enjoyer.getName(), enjoyer.getRelationship(), selectedOccasionLabel);
+                            generatedMessage = manager.generateGiftMessage(s.title(), s.description(), enjoyer.getName(), enjoyer.getRelationship(), selectedOccasionLabel, consentGranted);
                         } else {
                             // For spontaneous gifts, use a generic/formal message
-                            generatedMessage = manager.generateSpontaneousGiftMessage(s.title(), s.description(), selectedOccasionLabel);
+                            generatedMessage = manager.generateSpontaneousGiftMessage(s.title(), s.description(), selectedOccasionLabel, consentGranted);
                         }
 
                         Platform.runLater(() -> {
@@ -325,8 +329,8 @@ public class GiftSuggestionsModal extends Stage {
                 );
 
                 String text = (enjoyer != null)
-                        ? manager.generateGiftSuggestions(enjoyer, criteria)
-                        : manager.generateSpontaneousGifts(enjoyerDescription, criteria);
+                        ? manager.generateGiftSuggestions(enjoyer, criteria, consentGranted)
+                        : manager.generateSpontaneousGifts(enjoyerDescription, criteria, consentGranted);
 
                 List<GiftSuggestion> list = GiftSuggestionParser.parseAll(text);
                 if (list.isEmpty()) {

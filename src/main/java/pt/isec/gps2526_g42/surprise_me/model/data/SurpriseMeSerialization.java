@@ -6,7 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class SurpriseMeSerialization {
-    private static final String DIRECTORY = System.getProperty("user.home") + File.separator + ".surprise_me";
+    public static final String DATA_DIRECTORY_PROPERTY = "surpriseme.data.dir";
+    public static final String DATA_DIRECTORY_ENVIRONMENT_VARIABLE = "SURPRISEME_DATA_DIR";
     private static final String FILE_NAME = "data.spm";
 
     private SurpriseMeSerialization() {
@@ -16,12 +17,10 @@ public class SurpriseMeSerialization {
     public static void save(SurpriseMe obj) {
         createDirectory();
         Path filePath = dataFilePath();
-        System.out.println("[SM Serialization] Saving data to: " + filePath);
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath.toFile()))) {
             oos.writeObject(obj);
-            System.out.println("[SM Serialization] Data saved successfully");
         } catch (Exception ex) {
-            System.err.println("[SM Serialization] Could not save data file " + ex.getMessage());
+            System.err.println("[SM Serialization] Could not save the local data file");
         }
     }
 
@@ -34,18 +33,29 @@ public class SurpriseMeSerialization {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath.toFile()))) {
             return (SurpriseMe) ois.readObject();
         } catch (Exception ex) {
-            System.err.println("[SM Serialization] Could not open data file " + ex.getMessage());
+            System.err.println("[SM Serialization] Could not open the local data file");
             return new SurpriseMe();
         }
     }
 
-    private static Path dataFilePath() {
-        return Paths.get(DIRECTORY, FILE_NAME);
+    static Path dataFilePath() {
+        return dataDirectory().resolve(FILE_NAME);
+    }
+
+    public static Path dataDirectory() {
+        String configuredDirectory = System.getProperty(DATA_DIRECTORY_PROPERTY);
+        if (configuredDirectory == null || configuredDirectory.isBlank()) {
+            configuredDirectory = System.getenv(DATA_DIRECTORY_ENVIRONMENT_VARIABLE);
+        }
+        if (configuredDirectory == null || configuredDirectory.isBlank()) {
+            configuredDirectory = Paths.get(System.getProperty("user.home"), ".surprise_me").toString();
+        }
+        return Paths.get(configuredDirectory).toAbsolutePath().normalize();
     }
 
     private static void createDirectory() {
         try {
-            Path directory = Paths.get(DIRECTORY);
+            Path directory = dataDirectory();
             if (Files.notExists(directory)) {
                 Files.createDirectories(directory);
             }

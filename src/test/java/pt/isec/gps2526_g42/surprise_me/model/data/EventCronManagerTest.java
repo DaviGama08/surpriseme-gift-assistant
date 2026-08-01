@@ -20,10 +20,7 @@ class EventCronManagerTest {
     void setUp() {
         // Delete any existing data file to ensure clean test environment
         try {
-            java.nio.file.Path dataPath = java.nio.file.Paths.get(
-                System.getProperty("user.home"), ".surprise_me", "data.spm"
-            );
-            java.nio.file.Files.deleteIfExists(dataPath);
+            java.nio.file.Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
         } catch (Exception e) {
             // Ignore if file doesn't exist
         }
