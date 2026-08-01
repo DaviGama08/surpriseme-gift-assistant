@@ -34,13 +34,15 @@ class SurpriseMeManagerTest {
     void setUp() {
         // Delete any existing data file to ensure clean test environment
         try {
-            Path dataPath = Paths.get(System.getProperty("user.home"), ".surprise_me", "data.spm");
-            Files.deleteIfExists(dataPath);
+            Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
         } catch (Exception e) {
             // Ignore if file doesn't exist
         }
 
-        manager = new SurpriseMeManager();
+        manager = new SurpriseMeManager(prompt -> "1. Book - A thoughtful book (≈ €20)\n"
+                + "2. Concert - Two tickets (≈ €50)\n"
+                + "3. Course - A short course (≈ €40)\n"
+                + "4. Dinner - A local dinner (≈ €60)");
 
         // Register and login a test user
         boolean registered = manager.register("TestUser", "test@example.com", "password123");
@@ -210,7 +212,7 @@ class SurpriseMeManagerTest {
         criteria.setOccasion("Birthday");
 
         assertDoesNotThrow(() -> {
-            String result = manager.generateGiftSuggestions(enjoyerDetails, criteria);
+            String result = manager.generateGiftSuggestions(enjoyerDetails, criteria, true);
             assertNotNull(result, "Should return some result");
         });
     }
@@ -223,7 +225,7 @@ class SurpriseMeManagerTest {
         criteria.setMaxBudget(100.0);
 
         assertDoesNotThrow(() -> {
-            String result = manager.generateSpontaneousGifts("A book lover", criteria);
+            String result = manager.generateSpontaneousGifts("A book lover", criteria, true);
             assertNotNull(result, "Should return some result");
         });
     }
@@ -232,7 +234,7 @@ class SurpriseMeManagerTest {
     @DisplayName("generateGiftMessage should not throw exception")
     void testGenerateGiftMessage() {
         assertDoesNotThrow(() -> {
-            String result = manager.generateGiftMessage("Book", "A novel", "Alice", "Friend", "Birthday");
+            String result = manager.generateGiftMessage("Book", "A novel", "Alice", "Friend", "Birthday", true);
             assertNotNull(result, "Should return some result");
         });
     }
@@ -244,8 +246,7 @@ class SurpriseMeManagerTest {
     void testRegister() {
         // Clean up
         try {
-            Path dataPath = Paths.get(System.getProperty("user.home"), ".surprise_me", "data.spm");
-            Files.deleteIfExists(dataPath);
+            Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
         } catch (Exception e) {
             // Ignore
         }
@@ -260,8 +261,7 @@ class SurpriseMeManagerTest {
     void testLogin() {
         // Setup: Create a completely fresh environment
         try {
-            Path dataPath = Paths.get(System.getProperty("user.home"), ".surprise_me", "data.spm");
-            Files.deleteIfExists(dataPath);
+            Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
         } catch (Exception e) {
             // Ignore
         }

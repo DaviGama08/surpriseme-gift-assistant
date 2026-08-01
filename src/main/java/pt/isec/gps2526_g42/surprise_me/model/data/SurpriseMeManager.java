@@ -6,6 +6,7 @@ import pt.isec.gps2526_g42.surprise_me.model.Status;
 import pt.isec.gps2526_g42.surprise_me.model.Type;
 import pt.isec.gps2526_g42.surprise_me.model.llm.GiftCriteria;
 import pt.isec.gps2526_g42.surprise_me.model.llm.LlmApi;
+import pt.isec.gps2526_g42.surprise_me.model.llm.LlmClient;
 import pt.isec.gps2526_g42.surprise_me.model.llm.PromptBuilder;
 
 import java.time.LocalDate;
@@ -15,12 +16,16 @@ import java.util.List;
 
 public class SurpriseMeManager {
     private SurpriseMe surpriseMe;
-    private final LlmApi llmApi;
+    private final LlmClient llmClient;
     private final PromptBuilder promptBuilder;
 
     public SurpriseMeManager() {
+        this(new LlmApi());
+    }
+
+    public SurpriseMeManager(LlmClient llmClient) {
         load();
-        llmApi = new LlmApi();
+        this.llmClient = java.util.Objects.requireNonNull(llmClient);
         promptBuilder = new PromptBuilder();
     }
 
@@ -107,49 +112,60 @@ public class SurpriseMeManager {
         return surpriseMe.getGiftsForEnjoyer(enjoyerId);
     }
 
-    public String generateGiftSuggestions(EnjoyerDetails enjoyerDetails, GiftCriteria giftCriteria) {
+    public String generateGiftSuggestions(EnjoyerDetails enjoyerDetails, GiftCriteria giftCriteria, boolean consentGranted) {
+        if (!consentGranted) {
+            return "Consent is required before recipient data is sent to the external LLM provider.";
+        }
         try {
             String prompt = promptBuilder.buildGiftSuggestionPrompt(enjoyerDetails, giftCriteria);
-            return llmApi.generateGiftSuggestions(prompt);
+            return llmClient.generateGiftSuggestions(prompt);
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error creating suggestions: " + e.getMessage();
+            return "The suggestion service is currently unavailable.";
         }
     }
 
-    public String generateSpontaneousGifts(String enjoyerDescription, GiftCriteria giftCriteria) {
-        return generateSpontaneousGifts(enjoyerDescription, giftCriteria, null, null);
+    public String generateSpontaneousGifts(String enjoyerDescription, GiftCriteria giftCriteria, boolean consentGranted) {
+        return generateSpontaneousGifts(enjoyerDescription, giftCriteria, null, null, consentGranted);
     }
 
-    public String generateSpontaneousGifts(String enjoyerDescription, GiftCriteria giftCriteria, String userCity, String userCountry) {
+    public String generateSpontaneousGifts(String enjoyerDescription, GiftCriteria giftCriteria, String userCity,
+                                           String userCountry, boolean consentGranted) {
+        if (!consentGranted) {
+            return "Consent is required before recipient data is sent to the external LLM provider.";
+        }
         try {
             String prompt = promptBuilder.buildSpontaneousPrompt(enjoyerDescription, giftCriteria, userCity, userCountry);
-            return llmApi.generateGiftSuggestions(prompt);
+            return llmClient.generateGiftSuggestions(prompt);
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error creating suggestions: " + e.getMessage();
+            return "The suggestion service is currently unavailable.";
         }
     }
 
-    public String generateGiftMessage(String giftTitle, String giftDescription, String recipientName, String relationship, String occasion) {
+    public String generateGiftMessage(String giftTitle, String giftDescription, String recipientName,
+                                      String relationship, String occasion, boolean consentGranted) {
+        if (!consentGranted) {
+            return "Consent is required before recipient data is sent to the external LLM provider.";
+        }
         try {
             String prompt = promptBuilder.buildGiftMessagePrompt(
                     giftTitle, giftDescription, recipientName, relationship, occasion);
-            return llmApi.generateGiftSuggestions(prompt);
+            return llmClient.generateGiftSuggestions(prompt);
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error creating gift message: " + e.getMessage();
+            return "The suggestion service is currently unavailable.";
         }
     }
 
-    public String generateSpontaneousGiftMessage(String giftTitle, String giftDescription, String occasion) {
+    public String generateSpontaneousGiftMessage(String giftTitle, String giftDescription, String occasion,
+                                                 boolean consentGranted) {
+        if (!consentGranted) {
+            return "Consent is required before recipient data is sent to the external LLM provider.";
+        }
         try {
             String prompt = promptBuilder.buildSpontaneousGiftMessagePrompt(
                     giftTitle, giftDescription, occasion);
-            return llmApi.generateGiftSuggestions(prompt);
+            return llmClient.generateGiftSuggestions(prompt);
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error creating gift message: " + e.getMessage();
+            return "The suggestion service is currently unavailable.";
         }
     }
 

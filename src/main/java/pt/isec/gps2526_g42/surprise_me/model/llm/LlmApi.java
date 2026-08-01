@@ -15,9 +15,12 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class LlmApi {
-    private static final String API_URL = "https://api.groq.com/openai/v1/chat/completions";
+public class LlmApi implements LlmClient {
+    private static final String DEFAULT_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+    private static final String DEFAULT_MODEL = "openai/gpt-oss-120b";
     private static final String API_KEY_ENVIRONMENT_VARIABLE = "SURPRISEME_LLM_API_KEY";
+    private static final String API_URL_ENVIRONMENT_VARIABLE = "SURPRISEME_LLM_ENDPOINT";
+    private static final String MODEL_ENVIRONMENT_VARIABLE = "SURPRISEME_LLM_MODEL";
     private static final String LOCAL_SECRETS_FILE = "secrets.properties";
 
     private static final int DESCRIPTION_MAX = 1400;
@@ -25,21 +28,25 @@ public class LlmApi {
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
-    private final String apiKey;
+    private final URI apiUri;
+    private final String model;
 
     public LlmApi() {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
         this.objectMapper = new ObjectMapper();
-        this.apiKey = loadApiKey();
+        this.apiUri = loadApiUri();
+        this.model = environmentValueOrDefault(MODEL_ENVIRONMENT_VARIABLE, DEFAULT_MODEL);
     }
 
+    @Override
     public String generateGiftSuggestions(String prompt) throws Exception {
+        String apiKey = loadApiKey();
         String requestBody = buildRequestBody(prompt);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_URL))
+                .uri(apiUri)
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
@@ -52,7 +59,7 @@ public class LlmApi {
         );
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("API Error: " + response.statusCode() + " - " + response.body());
+            throw new RuntimeException("The LLM provider returned HTTP " + response.statusCode());
         }
 
         String rawResponse = parseResponse(response.body());
@@ -66,7 +73,7 @@ public class LlmApi {
         // requestData.put("max_tokens", 1000);
         // requestData.put("temperature", 0.7);
 
-        requestData.put("model", "openai/gpt-oss-120b");
+        requestData.put("model", model);
         requestData.put("max_tokens", 1024);
         requestData.put("temperature", 0.7);
 
@@ -174,6 +181,19 @@ public class LlmApi {
         throw new IllegalStateException(
                 "Configure " + API_KEY_ENVIRONMENT_VARIABLE + " or " + LOCAL_SECRETS_FILE + " before using gift suggestions."
         );
+    }
+
+    private static URI loadApiUri() {
+        URI uri = URI.create(environmentValueOrDefault(API_URL_ENVIRONMENT_VARIABLE, DEFAULT_API_URL));
+        if (!"https".equalsIgnoreCase(uri.getScheme())) {
+            throw new IllegalStateException("The LLM endpoint must use HTTPS");
+        }
+        return uri;
+    }
+
+    private static String environmentValueOrDefault(String name, String defaultValue) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? defaultValue : value.trim();
     }
 
     private String validateAndTruncateDescription(String line) {

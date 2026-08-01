@@ -19,6 +19,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
 import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeManager;
+import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeSerialization;
 import pt.isec.gps2526_g42.surprise_me.model.data.UserDetails;
 import pt.isec.gps2526_g42.surprise_me.ui.dialogsViews.ChoiceModal;
 import pt.isec.gps2526_g42.surprise_me.ui.dialogsViews.MessageModal;
@@ -319,8 +320,7 @@ public class ProfilePane extends VBox {
             } else if (selectedAvatarFile != null) {
                 try {
                     // Copy avatar file to .surprise_me directory
-                    String home = System.getProperty("user.home");
-                    Path surpriseMeDir = Paths.get(home, ".surprise_me", "avatars");
+                    Path surpriseMeDir = SurpriseMeSerialization.dataDirectory().resolve("avatars");
 
                     // Create avatars directory if it doesn't exist
                     if (!Files.exists(surpriseMeDir)) {
@@ -388,8 +388,7 @@ public class ProfilePane extends VBox {
 
         if (userDetails.getAvatarPath() != null && !userDetails.getAvatarPath().isEmpty()) {
             try {
-                String home = System.getProperty("user.home");
-                String path = Paths.get(home, ".surprise_me", userDetails.getAvatarPath()).toString();
+                String path = SurpriseMeSerialization.dataDirectory().resolve(userDetails.getAvatarPath()).toString();
                 Image img = new Image(Paths.get(path).toUri().toString());
                 // Fill circle with image pattern so it crops and centers
                 avatarCircle.setFill(new ImagePattern(img));

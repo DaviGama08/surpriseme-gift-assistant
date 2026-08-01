@@ -279,6 +279,15 @@ public class DefineGiftModal extends Stage {
             criteria = buildCriteria();
             final double targetWidth = getScene().getWidth();
 
+            boolean consentGranted = OkCancelModal.show(
+                    this,
+                    "External AI service",
+                    "SurpriseMe will send the recipient details and gift criteria shown here to the configured external LLM provider. Continue?"
+            );
+            if (!consentGranted) {
+                return;
+            }
+
             LoadingModal loading = new LoadingModal();
             loading.initOwner(getScene().getWindow());
             loading.showLoading();
@@ -287,8 +296,8 @@ public class DefineGiftModal extends Stage {
             new Thread(() -> {
                 try {
                     String suggestions = (enjoyer != null)
-                            ? manager.generateGiftSuggestions(enjoyer, criteria)
-                            : manager.generateSpontaneousGifts(enjoyerDescription, criteria);
+                            ? manager.generateGiftSuggestions(enjoyer, criteria, true)
+                            : manager.generateSpontaneousGifts(enjoyerDescription, criteria, true);
 
                     List<GiftSuggestion> parsed = GiftSuggestionParser.parseAll(suggestions);
                     if (parsed.size() != REQUIRED_ITEMS) {
@@ -301,7 +310,7 @@ public class DefineGiftModal extends Stage {
 
                         GiftSuggestionsModal modal = new GiftSuggestionsModal(
                                 manager, enjoyerId, enjoyer, enjoyerDescription,
-                                cbType.getValue(), cbOccasion.getValue(), suggestions, criteria
+                                cbType.getValue(), cbOccasion.getValue(), suggestions, criteria, true
                         );
                         modal.initOwner(getScene().getWindow());
                         modal.showAndWait();
