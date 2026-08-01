@@ -25,7 +25,6 @@ public class UserDetails implements Serializable {
     public UserDetails(UserDetails other) {
         this.name = other.name;
         this.email = other.email;
-        this.password = other.password;
         this.country = other.country;
         this.city = other.city;
         this.birthDate = other.birthDate;
@@ -53,7 +52,7 @@ public class UserDetails implements Serializable {
         return email;
     }
 
-    public String getPassword() {
+    String getPasswordHash() {
         return password;
     }
 
@@ -81,7 +80,7 @@ public class UserDetails implements Serializable {
         this.email = email;
     }
 
-    public void setPassword(String password) {
+    void setPasswordHash(String password) {
         this.password = password;
     }
 
