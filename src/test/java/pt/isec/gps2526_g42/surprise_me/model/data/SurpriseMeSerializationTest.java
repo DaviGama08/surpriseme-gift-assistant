@@ -11,6 +11,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Hashtable;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,7 +44,7 @@ class SurpriseMeSerializationTest {
     }
 
     @Test
-    void loadRecoversFromBackupWhenPrimaryIsCorrupt() {
+    void loadRecoversFromBackupWhenPrimaryIsCorrupt() throws IOException {
         SurpriseMe stored = new SurpriseMe();
         assertTrue(stored.register("Alice", "alice@example.com", "password123"));
         SurpriseMeSerialization.save(stored);
@@ -53,6 +55,57 @@ class SurpriseMeSerializationTest {
 
         Path primary = SurpriseMeSerialization.dataFilePath();
         assertDoesNotThrow(() -> Files.writeString(primary, "not-a-serialized-surprise-me"));
+        byte[] corruptPrimary = Files.readAllBytes(primary);
+        byte[] goodBackup = Files.readAllBytes(SurpriseMeSerialization.backupFilePath());
+
+        SurpriseMe recovered = SurpriseMeSerialization.load();
+        assertTrue(recovered.login("alice@example.com", "password123"));
+        assertEquals("Alice", recovered.getUserDetails().getName());
+        assertArrayEquals(corruptPrimary, Files.readAllBytes(primary));
+        assertArrayEquals(goodBackup, Files.readAllBytes(SurpriseMeSerialization.backupFilePath()));
+    }
+
+    @Test
+    void saveAfterBackupRecoveryKeepsUsableBackup() throws IOException {
+        SurpriseMe stored = new SurpriseMe();
+        assertTrue(stored.register("Alice", "alice@example.com", "password123"));
+        SurpriseMeSerialization.save(stored);
+        stored.addEnjoyer(validEnjoyer("AliceFriend"));
+        SurpriseMeSerialization.save(stored);
+
+        Path primary = SurpriseMeSerialization.dataFilePath();
+        Path backup = SurpriseMeSerialization.backupFilePath();
+        byte[] goodBackup = Files.readAllBytes(backup);
+        Files.writeString(primary, "not-a-serialized-surprise-me");
+        byte[] corruptPrimary = Files.readAllBytes(primary);
+
+        SurpriseMe recovered = SurpriseMeSerialization.load();
+        assertTrue(recovered.login("alice@example.com", "password123"));
+        recovered.addEnjoyer(validEnjoyer("RecoveredFriend"));
+        SurpriseMeSerialization.save(recovered);
+
+        assertFalse(Arrays.equals(corruptPrimary, Files.readAllBytes(backup)));
+        assertArrayEquals(goodBackup, Files.readAllBytes(backup));
+
+        Files.writeString(primary, "corrupt-again");
+        SurpriseMe fromBackup = SurpriseMeSerialization.load();
+        assertTrue(fromBackup.login("alice@example.com", "password123"));
+        assertEquals("Alice", fromBackup.getUserDetails().getName());
+    }
+
+    @Test
+    void loadRecoversFromLeftoverTmpWhenPrimaryIsMissing() throws IOException {
+        SurpriseMe stored = new SurpriseMe();
+        assertTrue(stored.register("Alice", "alice@example.com", "password123"));
+        SurpriseMeSerialization.save(stored);
+
+        Path primary = SurpriseMeSerialization.dataFilePath();
+        Files.copy(primary, SurpriseMeSerialization.tempFilePath());
+        try {
+            Files.deleteIfExists(primary);
+        } catch (IOException ex) {
+            Files.writeString(primary, "unreadable-primary");
+        }
 
         SurpriseMe recovered = SurpriseMeSerialization.load();
         assertTrue(recovered.login("alice@example.com", "password123"));
@@ -65,12 +118,20 @@ class SurpriseMeSerializationTest {
         try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(unexpectedFile))) {
             oos.writeObject(new File("secrets.txt"));
         }
+        assertFilterRejects(unexpectedFile);
 
-        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(unexpectedFile))) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(unexpectedFile))) {
+            oos.writeObject(new Hashtable<String, String>());
+        }
+        assertFilterRejects(unexpectedFile);
+    }
+
+    private static void assertFilterRejects(Path file) throws Exception {
+        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(file))) {
             ois.setObjectInputFilter(SurpriseMeSerialization.objectInputFilter());
             assertThrows(InvalidClassException.class, ois::readObject);
         } finally {
-            Files.deleteIfExists(unexpectedFile);
+            Files.deleteIfExists(file);
         }
     }
 
@@ -101,6 +162,7 @@ class SurpriseMeSerializationTest {
         assertNull(SurpriseMeSerialization.resolveAvatarPath(dataDirectory.resolve("avatars").resolve("ok.png").toString()));
         assertNull(SurpriseMeSerialization.resolveAvatarPath(null));
         assertNull(SurpriseMeSerialization.resolveAvatarPath("   "));
+        assertNull(SurpriseMeSerialization.resolveAvatarPath("avatars/foo\0.png"));
 
         Path allowed = SurpriseMeSerialization.resolveAvatarPath("avatars/ok.png");
         assertNotNull(allowed);

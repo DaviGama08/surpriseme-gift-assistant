@@ -273,7 +273,6 @@ public class EventDetailsModal extends Stage {
 
             boolean success = manager.removeEvent(eventId);
             if (success) {
-                manager.save();
                 new MessageModal(owner, "Event deleted", "The event was successfully deleted.");
                 this.close();
             } else {

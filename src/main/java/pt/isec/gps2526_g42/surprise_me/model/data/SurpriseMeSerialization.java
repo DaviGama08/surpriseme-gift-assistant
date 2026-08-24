@@ -2,17 +2,19 @@ package pt.isec.gps2526_g42.surprise_me.model.data;
 
 import pt.isec.gps2526_g42.surprise_me.config.AppConfig;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 
 public class SurpriseMeSerialization {
     public static final String DATA_DIRECTORY_PROPERTY = AppConfig.DATA_DIRECTORY_PROPERTY;
@@ -25,6 +27,7 @@ public class SurpriseMeSerialization {
     private static final int MAX_ARRAY_LENGTH = 100_000;
     private static final long MAX_STREAM_BYTES = 10L * 1024 * 1024;
     private static final ObjectInputFilter SERIALIZATION_FILTER = SurpriseMeSerialization::filterDeserializedClass;
+    private static boolean primaryIsReadable;
 
     private SurpriseMeSerialization() {
     }
@@ -37,18 +40,20 @@ public class SurpriseMeSerialization {
         Path backup = backupFilePath();
         try {
             writeSerialized(obj, tmp);
-            if (Files.exists(primary)) {
+            // A primary that failed to deserialize must not be rotated onto .bak.
+            if (primaryIsReadable && Files.exists(primary)) {
                 moveReplacing(primary, backup);
             }
             moveReplacing(tmp, primary);
+            primaryIsReadable = true;
         } catch (Exception ex) {
             System.err.println("[SM Serialization] Could not save the local data file");
             try {
-                if (Files.exists(tmp) && Files.exists(primary)) {
+                if (Files.exists(tmp) && primaryIsReadable && Files.exists(primary)) {
                     Files.deleteIfExists(tmp);
                 }
             } catch (IOException ignored) {
-                // leftover tmp is harmless if the primary file is intact
+                // leftover tmp is the recovery candidate when the primary is unreadable
             }
         }
     }
@@ -56,25 +61,28 @@ public class SurpriseMeSerialization {
     // Opens the folder and loads its data
     public static SurpriseMe load() {
         Path primary = dataFilePath();
+        Path tmp = tempFilePath();
         Path backup = backupFilePath();
-        boolean primaryExists = Files.exists(primary);
-        boolean backupExists = Files.exists(backup);
 
-        if (primaryExists) {
-            SurpriseMe loaded = tryLoad(primary);
-            if (loaded != null) {
-                return loaded;
-            }
+        SurpriseMe loaded = tryLoad(primary);
+        if (loaded != null) {
+            primaryIsReadable = true;
+            return loaded;
+        }
+        primaryIsReadable = false;
+
+        // Leftover tmp is a complete fsynced write that was not installed.
+        loaded = tryLoad(tmp);
+        if (loaded != null) {
+            return loaded;
         }
 
-        if (backupExists) {
-            SurpriseMe loaded = tryLoad(backup);
-            if (loaded != null) {
-                return loaded;
-            }
+        loaded = tryLoad(backup);
+        if (loaded != null) {
+            return loaded;
         }
 
-        if (primaryExists || backupExists) {
+        if (Files.exists(primary) || Files.exists(tmp) || Files.exists(backup)) {
             System.err.println("[SM Serialization] Could not recover local data; starting with empty state.");
         }
         return new SurpriseMe();
@@ -85,17 +93,21 @@ public class SurpriseMeSerialization {
             return null;
         }
 
-        Path dataDirectory = dataDirectory().toAbsolutePath().normalize();
-        Path stored = Path.of(relativePath);
-        if (stored.isAbsolute()) {
-            return null;
-        }
+        try {
+            Path dataDirectory = dataDirectory().toAbsolutePath().normalize();
+            Path stored = Path.of(relativePath);
+            if (stored.isAbsolute()) {
+                return null;
+            }
 
-        Path resolved = dataDirectory.resolve(stored).normalize();
-        if (!resolved.startsWith(dataDirectory)) {
+            Path resolved = dataDirectory.resolve(stored).normalize();
+            if (!resolved.startsWith(dataDirectory)) {
+                return null;
+            }
+            return resolved;
+        } catch (InvalidPathException ex) {
             return null;
         }
-        return resolved;
     }
 
     static Path dataFilePath() {
@@ -119,7 +131,11 @@ public class SurpriseMeSerialization {
     }
 
     private static SurpriseMe tryLoad(Path filePath) {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath.toFile()))) {
+        if (filePath == null || Files.notExists(filePath)) {
+            return null;
+        }
+        try (InputStream in = Files.newInputStream(filePath);
+             ObjectInputStream ois = new ObjectInputStream(in)) {
             ois.setObjectInputFilter(SERIALIZATION_FILTER);
             Object loaded = ois.readObject();
             if (loaded instanceof SurpriseMe surpriseMe) {
@@ -187,17 +203,13 @@ public class SurpriseMeSerialization {
         if (name.startsWith("java.time.")) {
             return true;
         }
-        if ("java.util".equals(current.getPackageName()) && current.isInterface()) {
+        if (current == Map.Entry.class) {
             return true;
         }
         return switch (name) {
             case "java.util.HashMap",
                  "java.util.HashSet",
                  "java.util.ArrayList",
-                 "java.util.LinkedList",
-                 "java.util.LinkedHashMap",
-                 "java.util.TreeMap",
-                 "java.util.TreeSet",
                  "java.lang.String",
                  "java.lang.Integer",
                  "java.lang.Long",
