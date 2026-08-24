@@ -66,7 +66,7 @@ Start the desktop application:
 
     mvn javafx:run
 
-The optional suggestion integration uses local configuration based on `secrets.example.properties`. Copy the example to the expected local file and replace placeholders locally; never commit real credentials.
+The optional suggestion integration uses local configuration based on `.env.example`. Copy the example to `.env` and replace placeholders locally; never commit real credentials.
 
 ## Engineering Concepts Demonstrated
 

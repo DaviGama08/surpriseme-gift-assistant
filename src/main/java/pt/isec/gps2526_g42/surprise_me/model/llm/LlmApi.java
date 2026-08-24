@@ -2,42 +2,37 @@ package pt.isec.gps2526_g42.surprise_me.model.llm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import pt.isec.gps2526_g42.surprise_me.config.AppConfig;
 
 public class LlmApi implements LlmClient {
-    private static final String DEFAULT_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-    private static final String DEFAULT_MODEL = "openai/gpt-oss-120b";
-    private static final String API_KEY_ENVIRONMENT_VARIABLE = "SURPRISEME_LLM_API_KEY";
-    private static final String API_URL_ENVIRONMENT_VARIABLE = "SURPRISEME_LLM_ENDPOINT";
-    private static final String MODEL_ENVIRONMENT_VARIABLE = "SURPRISEME_LLM_MODEL";
-    private static final String LOCAL_SECRETS_FILE = "secrets.properties";
-
     private static final int DESCRIPTION_MAX = 1400;
     private static final Pattern ITEM_START_PATTERN = Pattern.compile("^[1-4]\\..+");
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final AppConfig appConfig;
     private final URI apiUri;
     private final String model;
 
     public LlmApi() {
+        this(AppConfig.getInstance());
+    }
+
+    public LlmApi(AppConfig appConfig) {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
         this.objectMapper = new ObjectMapper();
-        this.apiUri = loadApiUri();
-        this.model = environmentValueOrDefault(MODEL_ENVIRONMENT_VARIABLE, DEFAULT_MODEL);
+        this.appConfig = appConfig;
+        this.apiUri = appConfig.getLlmEndpointUri();
+        this.model = appConfig.getLlmModel();
     }
 
     @Override
@@ -157,43 +152,14 @@ public class LlmApi implements LlmClient {
         return result.isEmpty() ? rawResponse : result;
     }
 
-    private static String loadApiKey() {
-        String environmentKey = System.getenv(API_KEY_ENVIRONMENT_VARIABLE);
-        if (environmentKey != null && !environmentKey.isBlank()) {
-            return environmentKey.trim();
+    private String loadApiKey() {
+        String apiKey = appConfig.getLlmApiKey();
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException(
+                    "Configure " + AppConfig.LLM_API_KEY_ENV + " before using gift suggestions."
+            );
         }
-
-        Path secretsPath = Path.of(LOCAL_SECRETS_FILE);
-        if (Files.isRegularFile(secretsPath)) {
-            Properties properties = new Properties();
-            try (InputStream input = Files.newInputStream(secretsPath)) {
-                properties.load(input);
-            } catch (IOException exception) {
-                throw new IllegalStateException("Could not read " + LOCAL_SECRETS_FILE, exception);
-            }
-
-            String localKey = properties.getProperty("LLM_API_KEY");
-            if (localKey != null && !localKey.isBlank()) {
-                return localKey.trim();
-            }
-        }
-
-        throw new IllegalStateException(
-                "Configure " + API_KEY_ENVIRONMENT_VARIABLE + " or " + LOCAL_SECRETS_FILE + " before using gift suggestions."
-        );
-    }
-
-    private static URI loadApiUri() {
-        URI uri = URI.create(environmentValueOrDefault(API_URL_ENVIRONMENT_VARIABLE, DEFAULT_API_URL));
-        if (!"https".equalsIgnoreCase(uri.getScheme())) {
-            throw new IllegalStateException("The LLM endpoint must use HTTPS");
-        }
-        return uri;
-    }
-
-    private static String environmentValueOrDefault(String name, String defaultValue) {
-        String value = System.getenv(name);
-        return value == null || value.isBlank() ? defaultValue : value.trim();
+        return apiKey;
     }
 
     private String validateAndTruncateDescription(String line) {

@@ -41,6 +41,7 @@ build/
 ### Local secrets and private configuration ###
 secrets.properties
 .env
+.env.local
 .env.*
 !.env.example
 *.pem

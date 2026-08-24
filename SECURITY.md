@@ -4,17 +4,17 @@
 
 The provider API key is loaded only when a real generation request is made. Configure one of the following for a local demonstration:
 
-1. Copy `secrets.example.properties` to `secrets.properties` and set `LLM_API_KEY` locally; or
-2. Define the `SURPRISEME_LLM_API_KEY` environment variable.
+1. Define the `SURPRISEME_LLM_API_KEY` environment variable; or
+2. Copy `.env.example` to `.env` and set `SURPRISEME_LLM_API_KEY` locally.
 
-The environment variable takes precedence over the local file.
+The environment variable takes precedence over `.env`. Endpoint and model fall back to safe non-secret defaults; the API key never has a default.
 
 An API key shipped in a desktop client is extractable. Restrict and rotate demonstration credentials. A production deployment must keep the real provider credential behind a controlled backend rather than distributing it with the application.
 
-`secrets.properties` is ignored by Git. Before committing, verify:
+`.env` is ignored by Git. Before committing, verify:
 
 ```powershell
-git check-ignore -v secrets.properties
+git check-ignore -v .env
 git status --short
 ```
 
@@ -29,4 +29,4 @@ Rotate any API key that was previously committed or shared, then update only the
 
 ## Repository hygiene
 
-Do not commit API keys, `secrets.properties`, serialized user data, certificates, IDE metadata or generated build files. CI and automated tests use an injected fake LLM client and require no provider secret.
+Do not commit API keys, `.env`, leftover `secrets.properties`, serialized user data, certificates, IDE metadata or generated build files. CI and automated tests use an injected fake LLM client and require no provider secret.

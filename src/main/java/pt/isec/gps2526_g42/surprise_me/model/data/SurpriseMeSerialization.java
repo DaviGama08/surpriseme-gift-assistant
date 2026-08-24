@@ -1,13 +1,14 @@
 package pt.isec.gps2526_g42.surprise_me.model.data;
 
+import pt.isec.gps2526_g42.surprise_me.config.AppConfig;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class SurpriseMeSerialization {
-    public static final String DATA_DIRECTORY_PROPERTY = "surpriseme.data.dir";
-    public static final String DATA_DIRECTORY_ENVIRONMENT_VARIABLE = "SURPRISEME_DATA_DIR";
+    public static final String DATA_DIRECTORY_PROPERTY = AppConfig.DATA_DIRECTORY_PROPERTY;
+    public static final String DATA_DIRECTORY_ENVIRONMENT_VARIABLE = AppConfig.DATA_DIRECTORY_ENV;
     private static final String FILE_NAME = "data.spm";
 
     private SurpriseMeSerialization() {
@@ -43,14 +44,7 @@ public class SurpriseMeSerialization {
     }
 
     public static Path dataDirectory() {
-        String configuredDirectory = System.getProperty(DATA_DIRECTORY_PROPERTY);
-        if (configuredDirectory == null || configuredDirectory.isBlank()) {
-            configuredDirectory = System.getenv(DATA_DIRECTORY_ENVIRONMENT_VARIABLE);
-        }
-        if (configuredDirectory == null || configuredDirectory.isBlank()) {
-            configuredDirectory = Paths.get(System.getProperty("user.home"), ".surprise_me").toString();
-        }
-        return Paths.get(configuredDirectory).toAbsolutePath().normalize();
+        return AppConfig.getInstance().getDataDirectory();
     }
 
     private static void createDirectory() {
