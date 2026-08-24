@@ -6,6 +6,8 @@ import pt.isec.gps2526_g42.surprise_me.model.Status;
 import pt.isec.gps2526_g42.surprise_me.model.Type;
 import pt.isec.gps2526_g42.surprise_me.model.security.PasswordHasher;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -16,9 +18,11 @@ import java.util.List;
 public class SurpriseMe implements Serializable {
     @Serial
     private static final long serialVersionUID = 300L;
+    private static final int MIN_PASSWORD_LENGTH = 6;
 
     private final HashMap<Integer, User> users;
-    private int loggedUser = -1;
+    private transient int loggedUser = -1;
+    private transient boolean passwordHashMigrated;
 
     public SurpriseMe() {
         this.users = new HashMap<>();
@@ -54,12 +58,16 @@ public class SurpriseMe implements Serializable {
     /* --- METHODS FOR USER --- */
 
     boolean login(String email, String password) {
+        passwordHashMigrated = false;
         if (loggedUser == -1 && email != null && password != null) {
             for (User user : users.values()) {
                 String storedHash = user.getPasswordHash();
-                if (user.getEmail().equalsIgnoreCase(email.trim()) && PasswordHasher.verify(password, storedHash)) {
+                if (user.getEmail() != null
+                        && user.getEmail().equalsIgnoreCase(email.trim())
+                        && PasswordHasher.verify(password, storedHash)) {
                     if (PasswordHasher.needsRehash(storedHash)) {
                         user.setPasswordHash(PasswordHasher.hash(password));
+                        passwordHashMigrated = true;
                     }
                     loggedUser = user.getIdUser();
                     return true;
@@ -69,13 +77,17 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
+    boolean consumePasswordHashMigration() {
+        boolean migrated = passwordHashMigrated;
+        passwordHashMigrated = false;
+        return migrated;
+    }
+
     boolean register(String name, String email, String password) {
         if (loggedUser == -1 && name != null && !name.isBlank() && email != null && !email.isBlank()
-                && password != null && !password.isBlank()) {
-            for (User user : users.values()) {
-                if (user.getEmail().equalsIgnoreCase(email.trim())) {
-                    return false;
-                }
+                && isAcceptablePassword(password)) {
+            if (emailTakenByAnotherUser(email, -1)) {
+                return false;
             }
             User newUser = new User(name.trim(), email.trim(), PasswordHasher.hash(password));
             users.put(newUser.getIdUser(), newUser);
@@ -100,10 +112,45 @@ public class SurpriseMe implements Serializable {
     }
 
     boolean setUserDetails(UserDetails userDetails) {
-        if (loggedUser > 0) {
+        if (loggedUser > 0 && userDetails != null) {
             User user = users.get(loggedUser);
-            if (user != null) {
-                return user.setUserDetails(userDetails);
+            if (user == null) {
+                return false;
+            }
+            String email = userDetails.getEmail();
+            if (email == null || email.isBlank() || emailTakenByAnotherUser(email, loggedUser)) {
+                return false;
+            }
+            userDetails.setEmail(email.trim());
+            return user.setUserDetails(userDetails);
+        }
+        return false;
+    }
+
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        loggedUser = -1;
+        passwordHashMigrated = false;
+    }
+
+    private static boolean isAcceptablePassword(String password) {
+        return password != null && !password.isBlank() && password.length() >= MIN_PASSWORD_LENGTH;
+    }
+
+    private boolean emailTakenByAnotherUser(String email, int currentUserId) {
+        if (email == null) {
+            return true;
+        }
+        String normalized = email.trim();
+        if (normalized.isEmpty()) {
+            return true;
+        }
+        for (User other : users.values()) {
+            if (other.getIdUser() != currentUserId
+                    && other.getEmail() != null
+                    && other.getEmail().equalsIgnoreCase(normalized)) {
+                return true;
             }
         }
         return false;

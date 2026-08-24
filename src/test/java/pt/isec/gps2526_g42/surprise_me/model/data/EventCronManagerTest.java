@@ -18,11 +18,12 @@ class EventCronManagerTest {
 
     @BeforeEach
     void setUp() {
-        // Delete any existing data file to ensure clean test environment
         try {
             java.nio.file.Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
+            java.nio.file.Files.deleteIfExists(SurpriseMeSerialization.backupFilePath());
+            java.nio.file.Files.deleteIfExists(SurpriseMeSerialization.tempFilePath());
         } catch (Exception e) {
-            // Ignore if file doesn't exist
+            // Ignore if files do not exist
         }
 
         manager = new SurpriseMeManager();

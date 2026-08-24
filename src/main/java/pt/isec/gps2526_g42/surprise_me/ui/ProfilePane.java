@@ -28,7 +28,6 @@ import pt.isec.gps2526_g42.surprise_me.ui.res.FontManager;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -388,8 +387,11 @@ public class ProfilePane extends VBox {
 
         if (userDetails.getAvatarPath() != null && !userDetails.getAvatarPath().isEmpty()) {
             try {
-                String path = SurpriseMeSerialization.dataDirectory().resolve(userDetails.getAvatarPath()).toString();
-                Image img = new Image(Paths.get(path).toUri().toString());
+                Path path = SurpriseMeSerialization.resolveAvatarPath(userDetails.getAvatarPath());
+                if (path == null) {
+                    throw new IllegalArgumentException("Invalid avatar path");
+                }
+                Image img = new Image(path.toUri().toString());
                 // Fill circle with image pattern so it crops and centers
                 avatarCircle.setFill(new ImagePattern(img));
                 avatarInitials.setVisible(false);

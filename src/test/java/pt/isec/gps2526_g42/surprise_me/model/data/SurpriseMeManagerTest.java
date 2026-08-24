@@ -32,12 +32,7 @@ class SurpriseMeManagerTest {
 
     @BeforeEach
     void setUp() {
-        // Delete any existing data file to ensure clean test environment
-        try {
-            Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
-        } catch (Exception e) {
-            // Ignore if file doesn't exist
-        }
+        deletePersistenceFiles();
 
         manager = new SurpriseMeManager(prompt -> "1. Book - A thoughtful book (≈ €20)\n"
                 + "2. Concert - Two tickets (≈ €50)\n"
@@ -244,12 +239,7 @@ class SurpriseMeManagerTest {
     @Test
     @DisplayName("register should create new user")
     void testRegister() {
-        // Clean up
-        try {
-            Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
-        } catch (Exception e) {
-            // Ignore
-        }
+        deletePersistenceFiles();
 
         SurpriseMeManager newManager = new SurpriseMeManager();
         boolean result = newManager.register("NewUser", "new@example.com", "pass123");
@@ -259,38 +249,71 @@ class SurpriseMeManagerTest {
     @Test
     @DisplayName("login should work in clean environment")
     void testLogin() {
-        // Setup: Create a completely fresh environment
-        try {
-            Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
-        } catch (Exception e) {
-            // Ignore
-        }
-
-        // Step 1: Create manager and register user WITHOUT logging in
-        // Problem: register() automatically logs in the user, and this state is persisted
-        // Solution: We test the login validation logic through the register path instead
+        deletePersistenceFiles();
 
         SurpriseMeManager cleanManager = new SurpriseMeManager();
 
-        // Test 1: Login should fail with non-existent user
         boolean loginFail = cleanManager.login("nonexistent@test.com", "anypassword");
         assertFalse(loginFail, "Login should fail for non-existent user");
 
-        // Test 2: Register user (which includes authentication)
         boolean registered = cleanManager.register("TestUser", "test@example.com", "password123");
         assertTrue(registered, "Should successfully register new user");
 
-        // Test 3: Try to register same email again (should fail because user is logged in)
         boolean duplicateRegister = cleanManager.register("Another", "test@example.com", "different");
         assertFalse(duplicateRegister, "Should not register duplicate email");
 
-        // Test 4: Verify user details are accessible (means login worked via register)
         UserDetails details = cleanManager.getUserDetails();
         assertNotNull(details, "Should have user details after successful registration");
+    }
 
-        // Note: Direct login() testing after save/load is not possible without logout functionality
-        // The current architecture auto-logs users in on register and persists login state
-        // This is a design limitation, not a test failure
+    @Test
+    @DisplayName("setUserDetails should reject another user's email")
+    void testDuplicateProfileEmailIsRejected() {
+        manager.logout();
+        assertTrue(manager.register("OtherUser", "b@email.com", "password123"));
+
+        UserDetails details = manager.getUserDetails();
+        assertNotNull(details);
+        details.setEmail(" TEST@example.com ");
+        assertFalse(manager.setUserDetails(details), "Should reject an email already used by another account");
+        assertEquals("b@email.com", manager.getUserDetails().getEmail());
+
+        details = manager.getUserDetails();
+        details.setEmail("B@email.com");
+        assertTrue(manager.setUserDetails(details), "Should allow the current user to keep their own email");
+        assertEquals("B@email.com", manager.getUserDetails().getEmail());
+    }
+
+    @Test
+    @DisplayName("logged-in session should not be restored after save and load")
+    void testSessionIsNotRestoredAfterSaveAndLoad() {
+        assertNotNull(manager.getUserDetails());
+        assertNull(manager.getUserDetails().getPasswordHash());
+        manager.save();
+
+        SurpriseMeManager reloaded = new SurpriseMeManager(prompt -> "");
+        assertNull(reloaded.getUserDetails(), "Session must not be restored from persisted state");
+        assertTrue(reloaded.login("test@example.com", "password123"));
+        assertNotNull(reloaded.getUserDetails());
+        assertEquals("test@example.com", reloaded.getUserDetails().getEmail());
+    }
+
+    @Test
+    @DisplayName("register should reject a password shorter than the minimum length")
+    void testRegisterRejectsShortPassword() {
+        manager.logout();
+        assertFalse(manager.register("ShortPass", "short@example.com", "12345"));
+        assertTrue(manager.register("ShortPass", "short@example.com", "123456"));
+    }
+
+    private static void deletePersistenceFiles() {
+        try {
+            Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
+            Files.deleteIfExists(SurpriseMeSerialization.backupFilePath());
+            Files.deleteIfExists(SurpriseMeSerialization.tempFilePath());
+        } catch (Exception e) {
+            // Ignore if files do not exist
+        }
     }
 
     @Test

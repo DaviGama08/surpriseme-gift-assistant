@@ -2,14 +2,29 @@ package pt.isec.gps2526_g42.surprise_me.model.data;
 
 import pt.isec.gps2526_g42.surprise_me.config.AppConfig;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputFilter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public class SurpriseMeSerialization {
     public static final String DATA_DIRECTORY_PROPERTY = AppConfig.DATA_DIRECTORY_PROPERTY;
     public static final String DATA_DIRECTORY_ENVIRONMENT_VARIABLE = AppConfig.DATA_DIRECTORY_ENV;
     private static final String FILE_NAME = "data.spm";
+    private static final String TMP_SUFFIX = ".tmp";
+    private static final String BAK_SUFFIX = ".bak";
+    private static final int MAX_GRAPH_DEPTH = 64;
+    private static final int MAX_REFERENCES = 100_000;
+    private static final int MAX_ARRAY_LENGTH = 100_000;
+    private static final long MAX_STREAM_BYTES = 10L * 1024 * 1024;
+    private static final ObjectInputFilter SERIALIZATION_FILTER = SurpriseMeSerialization::filterDeserializedClass;
 
     private SurpriseMeSerialization() {
     }
@@ -17,34 +32,181 @@ public class SurpriseMeSerialization {
     // Saves the data in the folder specified
     public static void save(SurpriseMe obj) {
         createDirectory();
-        Path filePath = dataFilePath();
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath.toFile()))) {
-            oos.writeObject(obj);
+        Path primary = dataFilePath();
+        Path tmp = tempFilePath();
+        Path backup = backupFilePath();
+        try {
+            writeSerialized(obj, tmp);
+            if (Files.exists(primary)) {
+                moveReplacing(primary, backup);
+            }
+            moveReplacing(tmp, primary);
         } catch (Exception ex) {
             System.err.println("[SM Serialization] Could not save the local data file");
+            try {
+                if (Files.exists(tmp) && Files.exists(primary)) {
+                    Files.deleteIfExists(tmp);
+                }
+            } catch (IOException ignored) {
+                // leftover tmp is harmless if the primary file is intact
+            }
         }
     }
 
     // Opens the folder and loads its data
     public static SurpriseMe load() {
-        Path filePath = dataFilePath();
-        if (Files.notExists(filePath)) {
-            return new SurpriseMe();
+        Path primary = dataFilePath();
+        Path backup = backupFilePath();
+        boolean primaryExists = Files.exists(primary);
+        boolean backupExists = Files.exists(backup);
+
+        if (primaryExists) {
+            SurpriseMe loaded = tryLoad(primary);
+            if (loaded != null) {
+                return loaded;
+            }
         }
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath.toFile()))) {
-            return (SurpriseMe) ois.readObject();
-        } catch (Exception ex) {
-            System.err.println("[SM Serialization] Could not open the local data file");
-            return new SurpriseMe();
+
+        if (backupExists) {
+            SurpriseMe loaded = tryLoad(backup);
+            if (loaded != null) {
+                return loaded;
+            }
         }
+
+        if (primaryExists || backupExists) {
+            System.err.println("[SM Serialization] Could not recover local data; starting with empty state.");
+        }
+        return new SurpriseMe();
+    }
+
+    public static Path resolveAvatarPath(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            return null;
+        }
+
+        Path dataDirectory = dataDirectory().toAbsolutePath().normalize();
+        Path stored = Path.of(relativePath);
+        if (stored.isAbsolute()) {
+            return null;
+        }
+
+        Path resolved = dataDirectory.resolve(stored).normalize();
+        if (!resolved.startsWith(dataDirectory)) {
+            return null;
+        }
+        return resolved;
     }
 
     static Path dataFilePath() {
         return dataDirectory().resolve(FILE_NAME);
     }
 
+    static Path backupFilePath() {
+        return dataDirectory().resolve(FILE_NAME + BAK_SUFFIX);
+    }
+
+    static Path tempFilePath() {
+        return dataDirectory().resolve(FILE_NAME + TMP_SUFFIX);
+    }
+
+    static ObjectInputFilter objectInputFilter() {
+        return SERIALIZATION_FILTER;
+    }
+
     public static Path dataDirectory() {
         return AppConfig.getInstance().getDataDirectory();
+    }
+
+    private static SurpriseMe tryLoad(Path filePath) {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath.toFile()))) {
+            ois.setObjectInputFilter(SERIALIZATION_FILTER);
+            Object loaded = ois.readObject();
+            if (loaded instanceof SurpriseMe surpriseMe) {
+                return surpriseMe;
+            }
+            return null;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private static void writeSerialized(SurpriseMe obj, Path tmpPath) throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(tmpPath.toFile());
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(obj);
+            oos.flush();
+            fos.getFD().sync();
+        }
+    }
+
+    private static void moveReplacing(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException | FileAlreadyExistsException ex) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static ObjectInputFilter.Status filterDeserializedClass(ObjectInputFilter.FilterInfo filterInfo) {
+        if (filterInfo.depth() > MAX_GRAPH_DEPTH
+                || filterInfo.references() > MAX_REFERENCES
+                || filterInfo.streamBytes() > MAX_STREAM_BYTES) {
+            return ObjectInputFilter.Status.REJECTED;
+        }
+        if (filterInfo.arrayLength() > MAX_ARRAY_LENGTH) {
+            return ObjectInputFilter.Status.REJECTED;
+        }
+
+        Class<?> serialClass = filterInfo.serialClass();
+        if (serialClass == null) {
+            return ObjectInputFilter.Status.UNDECIDED;
+        }
+        if (isAllowedClass(serialClass)) {
+            return ObjectInputFilter.Status.ALLOWED;
+        }
+        return ObjectInputFilter.Status.REJECTED;
+    }
+
+    private static boolean isAllowedClass(Class<?> clazz) {
+        Class<?> current = clazz;
+        while (current.isArray()) {
+            current = current.getComponentType();
+        }
+        if (current.isPrimitive()) {
+            return true;
+        }
+
+        String name = current.getName();
+        if (name.startsWith("pt.isec.gps2526_g42.surprise_me.model.data.")) {
+            return true;
+        }
+        if (current.isEnum() && "pt.isec.gps2526_g42.surprise_me.model".equals(current.getPackageName())) {
+            return true;
+        }
+        if (name.startsWith("java.time.")) {
+            return true;
+        }
+        if ("java.util".equals(current.getPackageName()) && current.isInterface()) {
+            return true;
+        }
+        return switch (name) {
+            case "java.util.HashMap",
+                 "java.util.HashSet",
+                 "java.util.ArrayList",
+                 "java.util.LinkedList",
+                 "java.util.LinkedHashMap",
+                 "java.util.TreeMap",
+                 "java.util.TreeSet",
+                 "java.lang.String",
+                 "java.lang.Integer",
+                 "java.lang.Long",
+                 "java.lang.Boolean",
+                 "java.lang.Number",
+                 "java.lang.Enum",
+                 "java.lang.Object" -> true;
+            default -> false;
+        };
     }
 
     private static void createDirectory() {

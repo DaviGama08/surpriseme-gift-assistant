@@ -43,11 +43,15 @@ public class SurpriseMeManager {
     /* --- METHODS FOR USER --- */
 
     public boolean login(String email, String password) {
-        return surpriseMe.login(email, password);
+        boolean success = surpriseMe.login(email, password);
+        if (success && surpriseMe.consumePasswordHashMigration()) {
+            save();
+        }
+        return success;
     }
 
     public boolean register(String name, String email, String password) {
-        return surpriseMe.register(name, email, password);
+        return persistIfChanged(surpriseMe.register(name, email, password));
     }
 
     public UserDetails getUserDetails() {
@@ -55,7 +59,7 @@ public class SurpriseMeManager {
     }
 
     public boolean setUserDetails(UserDetails userDetails) {
-        return surpriseMe.setUserDetails(userDetails);
+        return persistIfChanged(surpriseMe.setUserDetails(userDetails));
     }
 
     public void logout() {
@@ -66,7 +70,7 @@ public class SurpriseMeManager {
     /* --- METHODS FOR USER ENJOYERS --- */
 
     public boolean addEnjoyer(EnjoyerDetails details) {
-        return surpriseMe.addEnjoyer(details);
+        return persistIfChanged(surpriseMe.addEnjoyer(details));
     }
 
     public HashMap<Integer, EnjoyerDetails> getEnjoyers() {
@@ -78,18 +82,18 @@ public class SurpriseMeManager {
     }
 
     public boolean editEnjoyer(int idEnjoyer, EnjoyerDetails details) {
-        return surpriseMe.editEnjoyer(idEnjoyer, details);
+        return persistIfChanged(surpriseMe.editEnjoyer(idEnjoyer, details));
     }
 
     public boolean removeEnjoyer(int idEnjoyer) {
-        return surpriseMe.removeEnjoyer(idEnjoyer);
+        return persistIfChanged(surpriseMe.removeEnjoyer(idEnjoyer));
     }
 
     /* --- METHODS FOR USER GIFTS --- */
 
     public boolean addGift(String name, Type type, Occasion occasion, int enjoyerId) {
         // Only adds the gift now; no automatic event binding based on occasion.
-        return surpriseMe.addGift(enjoyerId, name, type, occasion);
+        return persistIfChanged(surpriseMe.addGift(enjoyerId, name, type, occasion));
     }
 
     public boolean addGift(String name, Type type, Occasion occasion) {
@@ -97,11 +101,11 @@ public class SurpriseMeManager {
     }
 
     public boolean editGift(int idGift, Feedback feedback, Status status) {
-        return surpriseMe.editGift(idGift, feedback, status);
+        return persistIfChanged(surpriseMe.editGift(idGift, feedback, status));
     }
 
     public boolean setGiftMessage(int giftId, String giftMessage) {
-        return surpriseMe.setGiftMessage(giftId, giftMessage);
+        return persistIfChanged(surpriseMe.setGiftMessage(giftId, giftMessage));
     }
 
     public ArrayList<Gift> getGifts() {
@@ -172,15 +176,15 @@ public class SurpriseMeManager {
     /* --- METHODS FOR USER EVENTS --- */
 
     public boolean addEvent(String name, LocalDate date, Occasion occasion, int enjoyerId) {
-        return surpriseMe.addEvent(name, date, occasion, enjoyerId);
+        return persistIfChanged(surpriseMe.addEvent(name, date, occasion, enjoyerId));
     }
 
     public boolean editEvent(int eventId, String name, LocalDate date, Occasion occasion, int enjoyerId) {
-        return surpriseMe.editEvent(eventId, name, date, occasion, enjoyerId);
+        return persistIfChanged(surpriseMe.editEvent(eventId, name, date, occasion, enjoyerId));
     }
 
     public boolean removeEvent(int eventId) {
-        return surpriseMe.removeEvent(eventId);
+        return persistIfChanged(surpriseMe.removeEvent(eventId));
     }
 
     public List<Integer> getMonthlyEventsIds(LocalDate monthFirstDay) {
@@ -219,5 +223,12 @@ public class SurpriseMeManager {
 
     public List<Integer> getEventIdsByOccasion(Occasion occasion) {
         return surpriseMe.getEventIdsByOccasion(occasion);
+    }
+
+    private boolean persistIfChanged(boolean changed) {
+        if (changed) {
+            save();
+        }
+        return changed;
     }
 }
