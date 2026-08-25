@@ -8,7 +8,6 @@ import pt.isec.gps2526_g42.surprise_me.model.Status;
 import pt.isec.gps2526_g42.surprise_me.model.Type;
 import pt.isec.gps2526_g42.surprise_me.model.data.EnjoyerDetails;
 import pt.isec.gps2526_g42.surprise_me.model.data.Event;
-import pt.isec.gps2526_g42.surprise_me.model.data.EventCronManager;
 import pt.isec.gps2526_g42.surprise_me.model.data.Gift;
 import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMe;
 import pt.isec.gps2526_g42.surprise_me.model.data.UserDetails;

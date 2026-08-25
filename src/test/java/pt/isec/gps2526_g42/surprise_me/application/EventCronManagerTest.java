@@ -1,10 +1,10 @@
-package pt.isec.gps2526_g42.surprise_me.model.data;
+package pt.isec.gps2526_g42.surprise_me.application;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
 import pt.isec.gps2526_g42.surprise_me.model.Occasion;
+import pt.isec.gps2526_g42.surprise_me.model.data.EnjoyerDetails;
 import pt.isec.gps2526_g42.surprise_me.persistence.SurpriseMeSerialization;
 
 import java.time.LocalDate;

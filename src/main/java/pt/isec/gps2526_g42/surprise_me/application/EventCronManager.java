@@ -1,7 +1,8 @@
-package pt.isec.gps2526_g42.surprise_me.model.data;
+package pt.isec.gps2526_g42.surprise_me.application;
 
-import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
 import pt.isec.gps2526_g42.surprise_me.model.Occasion;
+import pt.isec.gps2526_g42.surprise_me.model.data.CronDateUtils;
+import pt.isec.gps2526_g42.surprise_me.model.data.EnjoyerDetails;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

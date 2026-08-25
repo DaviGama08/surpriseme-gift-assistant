@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-final class CronDateUtils {
+public final class CronDateUtils {
 
     private static final CronDefinition CRON_DEFINITION = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
 
@@ -20,7 +20,7 @@ final class CronDateUtils {
     private CronDateUtils() {
     }
 
-    static LocalDate nextDate(String cronExpression, LocalDate fromDate) {
+    public static LocalDate nextDate(String cronExpression, LocalDate fromDate) {
         if (cronExpression == null || fromDate == null) {
             return null;
         }
