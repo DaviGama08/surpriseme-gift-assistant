@@ -38,4 +38,11 @@ class PasswordHasherTest {
         assertTrue(PasswordHasher.verify("legacy-password", legacyHash.toString()));
         assertTrue(PasswordHasher.needsRehash(legacyHash.toString()));
     }
+
+    @Test
+    void plaintextLegacyPasswordsCanBeVerifiedForAutomaticMigration() {
+        assertTrue(PasswordHasher.verify("legacy-plain", "legacy-plain"));
+        assertTrue(PasswordHasher.needsRehash("legacy-plain"));
+        assertFalse(PasswordHasher.verify("wrong-password", "legacy-plain"));
+    }
 }

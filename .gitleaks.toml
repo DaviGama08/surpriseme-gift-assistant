@@ -1,0 +1,11 @@
+title = "SurpriseMe gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Example env file holds empty placeholders and public non-secret defaults"
+paths = [
+  '''(?:^|/)\.env\.example$''',
+  '''(?:^|/)secrets\.example\.properties$'''
+]
