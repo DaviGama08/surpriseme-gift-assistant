@@ -2,7 +2,6 @@ package pt.isec.gps2526_g42.surprise_me.ui;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -24,7 +23,6 @@ public class LoginPane extends HBox {
     // UI elements which are used to click or validate info
     private TextField emailField;
     private PasswordField passwordField;
-    private CheckBox agreeCheck;
     private StyledButton logInButton;
     private Text signUpText;
     private Text loginErrorText;
@@ -82,24 +80,12 @@ public class LoginPane extends HBox {
         logInButton.setPrefHeight(45);
         logInButton.setMaxWidth(Double.MAX_VALUE);
 
-        // Terms box
-        HBox termsBox = new HBox();
-        termsBox.setAlignment(Pos.CENTER_LEFT);
-        termsBox.setSpacing(10);
-
-        agreeCheck = new CheckBox();
-        agreeCheck.setSelected(true);
-        Text termsText = new Text("I agree with terms and conditions");
-        termsText.setStyle("-fx-font-size: 14px; -fx-font-weight: 500;");
-
-        termsBox.getChildren().addAll(agreeCheck, termsText);
-
         // Error message
         loginErrorText = new Text();
         loginErrorText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         loginErrorText.setFill(AppColors.RED.getColor());
 
-        VBox middleBox = new VBox(signInText, emailField, passwordField, logInButton, termsBox, loginErrorText);
+        VBox middleBox = new VBox(signInText, emailField, passwordField, logInButton, loginErrorText);
         middleBox.setSpacing(10);
         middleBox.setPadding(new Insets(50, 10, 10, 10));
         VBox.setVgrow(middleBox, Priority.ALWAYS);
@@ -135,8 +121,6 @@ public class LoginPane extends HBox {
 
         passwordField.textProperty().addListener((obs, oldV, newV) -> updateLoginButtonState());
 
-        agreeCheck.selectedProperty().addListener((obs, oldV, newV) -> updateLoginButtonState());
-
         signUpText.setOnMouseClicked(e -> UIPropertyChangeManager.getInstance().firePropertyChange(PROP_SHOW_REGISTER, null, null));
 
         logInButton.setOnAction(e -> {
@@ -155,9 +139,8 @@ public class LoginPane extends HBox {
     private void updateLoginButtonState() {
         boolean emailOK = !emailField.getText().trim().isEmpty();
         boolean passOK = !passwordField.getText().trim().isEmpty();
-        boolean termsOK = agreeCheck.isSelected();
 
-        logInButton.setDisable(!(emailOK && passOK && termsOK));
+        logInButton.setDisable(!(emailOK && passOK));
     }
 
 }

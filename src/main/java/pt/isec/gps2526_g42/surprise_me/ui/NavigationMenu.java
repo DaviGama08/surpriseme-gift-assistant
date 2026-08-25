@@ -16,7 +16,7 @@ import static pt.isec.gps2526_g42.surprise_me.ui.UIPropertyChangeManager.*;
 
 // Class that creates and manages the navigation menu for the App
 public class NavigationMenu extends VBox {
-    private SurpriseMeManager manager;
+    private final SurpriseMeManager manager;
     private Button btnDashboard;
     private Button btnMyProfile;
     private Button btnGenerateGifts;
@@ -29,7 +29,6 @@ public class NavigationMenu extends VBox {
         this.manager = manager;
         createViews();
         registerHandlers();
-        update();
     }
 
     private void createViews() {
@@ -99,9 +98,5 @@ public class NavigationMenu extends VBox {
                 UIPropertyChangeManager.getInstance().firePropertyChange(PROP_SHOW_LOGIN, null, null);
             }
         });
-    }
-
-    private void update() {
-        // no usage
     }
 }

@@ -51,7 +51,6 @@ public class GiftDetailsModal extends Stage {
         this.initStyle(StageStyle.TRANSPARENT);
         createViews();
         registerHandlers();
-        update();
     }
 
     private void createViews() {
@@ -245,13 +244,9 @@ public class GiftDetailsModal extends Stage {
         lbClose.setOnMouseClicked(e -> {
             if (btnSave.isDisable())
                 this.close();
-            else if (OkCancelModal.show(this, "Close gift details", "Do you want to exit? You'll loose all unsaved data.")) {
+            else if (OkCancelModal.show(this, "Close gift details", "Do you want to exit? You'll lose all unsaved data.")) {
                 this.close();
             }
         });
-    }
-
-    private void update() {
-
     }
 }

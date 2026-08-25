@@ -13,12 +13,8 @@ import pt.isec.gps2526_g42.surprise_me.ui.res.ImageManager;
 public class SurpriseMeMainJFX extends Application {
     private SurpriseMeManager manager;
 
-    public SurpriseMeMainJFX() {
-        manager = new SurpriseMeManager();
-    }
-
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         manager = new SurpriseMeManager();
         createAppStage(primaryStage);
         primaryStage.show();
@@ -49,7 +45,6 @@ public class SurpriseMeMainJFX extends Application {
                 Platform.exit();
             }
         });
-        stage.show();
     }
 
 }

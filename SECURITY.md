@@ -1,6 +1,8 @@
 # Security and privacy
 
-## Local LLM configuration
+## Local secrets
+
+`.env` is local only. It is ignored by Git and must never be committed.
 
 The provider API key is loaded only when a real generation request is made. Configure one of the following for a local demonstration:
 
@@ -11,21 +13,31 @@ The environment variable takes precedence over `.env`. Endpoint and model fall b
 
 An API key shipped in a desktop client is extractable. Restrict and rotate demonstration credentials. A production deployment must keep the real provider credential behind a controlled backend rather than distributing it with the application.
 
-`.env` is ignored by Git. Before committing, verify:
+If an API key is exposed, rotate it immediately with the provider and update only the local secret source. Removing a key from the current tree does not revoke it or erase it from Git history.
+
+Before committing, verify:
 
 ```powershell
 git check-ignore -v .env
 git status --short
 ```
 
-Rotate any API key that was previously committed or shared, then update only the local secret source. Removing a key from the current tree does not revoke it or erase it from Git history.
+## Passwords
 
-## User data and external processing
+Passwords are stored using salted PBKDF2-HMAC-SHA-256. Older SHA-3 or plaintext records exist only so that a successful login can migrate them to PBKDF2. They are not a supported long-term format.
 
-- The interface asks for explicit consent before sending recipient criteria to the configured LLM provider.
+## User data and local files
+
+- User data remains local (default directory `~/.surprise_me`). Do not share serialized files (`data.spm`, `.bak`, or staging `.new` / `.tmp`).
+- Override the directory with `SURPRISEME_DATA_DIR` or the `surpriseme.data.dir` JVM property when isolation is required.
+- Saves write a staging file and replace `data.spm` atomically. A readable primary is rotated to `data.spm.bak` before replacement; load recovers from staging or backup if the primary is unreadable.
+- Java deserialization uses an `ObjectInputFilter` allow-list so unexpected types and oversized graphs are rejected.
+
+## LLM processing
+
+- Recipient criteria are sent to the configured LLM provider only after explicit consent in the UI.
 - Logs do not include prompts, recipient profiles, provider responses or full local paths.
-- Serialized user data is local and must not be committed or shared. Override its directory with `SURPRISEME_DATA_DIR` or the `surpriseme.data.dir` JVM property when isolation is required.
-- Passwords are stored using salted PBKDF2-HMAC-SHA-256. Legacy SHA-3 or plaintext records are accepted only for a successful one-time migration to PBKDF2.
+- The application starts without an API key. Suggestions that need a provider fail until one is configured.
 
 ## Repository hygiene
 

@@ -76,14 +76,12 @@ public class RegisterPane extends HBox {
         createAccountButton.setPrefHeight(45);
         createAccountButton.setMaxWidth(Double.MAX_VALUE);
 
-        // Terms box
         HBox termsBox = new HBox();
         termsBox.setAlignment(Pos.CENTER_LEFT);
         termsBox.setSpacing(10);
 
         agreeCheck = new CheckBox();
-        agreeCheck.setSelected(true);
-        Text termsText = new Text("I agree with terms and conditions");
+        Text termsText = new Text("I confirm I want to create this local account");
         termsText.setStyle("-fx-font-size: 14px; -fx-font-weight: 500;");
 
         termsBox.getChildren().addAll(agreeCheck, termsText);

@@ -35,7 +35,6 @@ public class RootPane extends BorderPane {
         this.manager = manager;
         createViews();
         registerHandlers();
-        update();
     }
 
     private void createViews() {
@@ -115,9 +114,5 @@ public class RootPane extends BorderPane {
                     setCenter(registerPane);
                 }
         );
-    }
-
-    private void update() {
-        // no usage
     }
 }

@@ -5,23 +5,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>pt.isec.gps2526.group42</groupId>
-
-    <!-- 2.3: artifactId igual ao teu group_ID (ajusta se o prof pediu outro nome) -->
     <artifactId>gps2526_g42</artifactId>
-
     <version>0.1.0-SNAPSHOT</version>
     <name>SurpriseMe</name>
 
-    <!-- 2.1: property do SonarCloud -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <javafx.version>21.0.4</javafx.version>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
-        <javafx.classifier>win</javafx.classifier>
-
-        <!-- Passo 2.1: organização do SonarCloud -->
-        <sonar.organization>gps2526-g42</sonar.organization>
     </properties>
 
     <dependencies>
@@ -29,13 +21,6 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
-            <classifier>${javafx.classifier}</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>${javafx.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
