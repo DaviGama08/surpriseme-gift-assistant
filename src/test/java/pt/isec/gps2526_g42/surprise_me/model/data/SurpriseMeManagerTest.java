@@ -311,6 +311,7 @@ class SurpriseMeManagerTest {
             Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
             Files.deleteIfExists(SurpriseMeSerialization.backupFilePath());
             Files.deleteIfExists(SurpriseMeSerialization.tempFilePath());
+            Files.deleteIfExists(SurpriseMeSerialization.newFilePath());
         } catch (Exception e) {
             // Ignore if files do not exist
         }

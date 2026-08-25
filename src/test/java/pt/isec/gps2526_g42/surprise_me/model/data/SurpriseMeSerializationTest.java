@@ -110,6 +110,45 @@ class SurpriseMeSerializationTest {
         SurpriseMe recovered = SurpriseMeSerialization.load();
         assertTrue(recovered.login("alice@example.com", "password123"));
         assertEquals("Alice", recovered.getUserDetails().getName());
+        assertTrue(Files.exists(primary));
+
+        deleteQuietly(SurpriseMeSerialization.tempFilePath());
+        SurpriseMe fromPrimary = SurpriseMeSerialization.load();
+        assertTrue(fromPrimary.login("alice@example.com", "password123"));
+        assertEquals("Alice", fromPrimary.getUserDetails().getName());
+    }
+
+    @Test
+    void loadRecoversFromLeftoverNewWhenPrimaryIsMissing() throws IOException {
+        SurpriseMe stored = new SurpriseMe();
+        assertTrue(stored.register("Alice", "alice@example.com", "password123"));
+        stored.addEnjoyer(validEnjoyer("AliceFriend"));
+        SurpriseMeSerialization.save(stored);
+
+        Path primary = SurpriseMeSerialization.dataFilePath();
+        Path staging = SurpriseMeSerialization.newFilePath();
+        Files.copy(primary, staging);
+        try {
+            Files.deleteIfExists(primary);
+        } catch (IOException ex) {
+            Files.writeString(primary, "unreadable-primary");
+        }
+
+        SurpriseMe recovered = SurpriseMeSerialization.load();
+        assertTrue(recovered.login("alice@example.com", "password123"));
+        assertEquals("Alice", recovered.getUserDetails().getName());
+        assertTrue(Files.exists(primary));
+
+        deleteQuietly(staging);
+        recovered.addEnjoyer(validEnjoyer("RecoveredFriend"));
+        SurpriseMeSerialization.save(recovered);
+
+        assertTrue(SurpriseMeSerialization.load().login("alice@example.com", "password123"));
+
+        Files.writeString(primary, "corrupt-after-save");
+        SurpriseMe afterSave = SurpriseMeSerialization.load();
+        assertTrue(afterSave.login("alice@example.com", "password123"));
+        assertEquals("Alice", afterSave.getUserDetails().getName());
     }
 
     @Test
@@ -180,6 +219,7 @@ class SurpriseMeSerializationTest {
         deleteQuietly(SurpriseMeSerialization.dataFilePath());
         deleteQuietly(SurpriseMeSerialization.backupFilePath());
         deleteQuietly(SurpriseMeSerialization.tempFilePath());
+        deleteQuietly(SurpriseMeSerialization.newFilePath());
     }
 
     private static void deleteQuietly(Path path) {

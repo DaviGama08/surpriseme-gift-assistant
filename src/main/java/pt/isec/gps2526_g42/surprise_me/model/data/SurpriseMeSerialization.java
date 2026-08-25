@@ -21,6 +21,7 @@ public class SurpriseMeSerialization {
     public static final String DATA_DIRECTORY_ENVIRONMENT_VARIABLE = AppConfig.DATA_DIRECTORY_ENV;
     private static final String FILE_NAME = "data.spm";
     private static final String TMP_SUFFIX = ".tmp";
+    private static final String NEW_SUFFIX = ".new";
     private static final String BAK_SUFFIX = ".bak";
     private static final int MAX_GRAPH_DEPTH = 64;
     private static final int MAX_REFERENCES = 100_000;
@@ -36,24 +37,24 @@ public class SurpriseMeSerialization {
     public static void save(SurpriseMe obj) {
         createDirectory();
         Path primary = dataFilePath();
-        Path tmp = tempFilePath();
+        Path staging = newFilePath();
         Path backup = backupFilePath();
         try {
-            writeSerialized(obj, tmp);
+            writeSerialized(obj, staging);
             // A primary that failed to deserialize must not be rotated onto .bak.
             if (primaryIsReadable && Files.exists(primary)) {
                 moveReplacing(primary, backup);
             }
-            moveReplacing(tmp, primary);
+            moveReplacing(staging, primary);
             primaryIsReadable = true;
         } catch (Exception ex) {
             System.err.println("[SM Serialization] Could not save the local data file");
             try {
-                if (Files.exists(tmp) && primaryIsReadable && Files.exists(primary)) {
-                    Files.deleteIfExists(tmp);
+                if (Files.exists(staging) && primaryIsReadable && Files.exists(primary)) {
+                    Files.deleteIfExists(staging);
                 }
             } catch (IOException ignored) {
-                // leftover tmp is the recovery candidate when the primary is unreadable
+                // leftover staging is harmless because the primary is still intact
             }
         }
     }
@@ -71,10 +72,14 @@ public class SurpriseMeSerialization {
         }
         primaryIsReadable = false;
 
-        // Leftover tmp is a complete fsynced write that was not installed.
-        loaded = tryLoad(tmp);
-        if (loaded != null) {
-            return loaded;
+        Path[] stagingCandidates = {tmp, newFilePath()};
+        for (Path staging : stagingCandidates) {
+            loaded = tryLoad(staging);
+            if (loaded != null) {
+                // Move recovered bytes onto primary so the next save cannot truncate them.
+                installRecoveredPrimary(staging, primary);
+                return loaded;
+            }
         }
 
         loaded = tryLoad(backup);
@@ -82,7 +87,7 @@ public class SurpriseMeSerialization {
             return loaded;
         }
 
-        if (Files.exists(primary) || Files.exists(tmp) || Files.exists(backup)) {
+        if (Files.exists(primary) || Files.exists(tmp) || Files.exists(newFilePath()) || Files.exists(backup)) {
             System.err.println("[SM Serialization] Could not recover local data; starting with empty state.");
         }
         return new SurpriseMe();
@@ -122,6 +127,10 @@ public class SurpriseMeSerialization {
         return dataDirectory().resolve(FILE_NAME + TMP_SUFFIX);
     }
 
+    static Path newFilePath() {
+        return dataDirectory().resolve(FILE_NAME + NEW_SUFFIX);
+    }
+
     static ObjectInputFilter objectInputFilter() {
         return SERIALIZATION_FILTER;
     }
@@ -144,6 +153,15 @@ public class SurpriseMeSerialization {
             return null;
         } catch (Exception ex) {
             return null;
+        }
+    }
+
+    private static void installRecoveredPrimary(Path source, Path primary) {
+        try {
+            moveReplacing(source, primary);
+            primaryIsReadable = true;
+        } catch (IOException ignored) {
+            // In-memory state is already recovered; source remains a load candidate.
         }
     }
 

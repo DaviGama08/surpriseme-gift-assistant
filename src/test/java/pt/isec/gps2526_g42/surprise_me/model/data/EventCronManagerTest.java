@@ -22,6 +22,7 @@ class EventCronManagerTest {
             java.nio.file.Files.deleteIfExists(SurpriseMeSerialization.dataFilePath());
             java.nio.file.Files.deleteIfExists(SurpriseMeSerialization.backupFilePath());
             java.nio.file.Files.deleteIfExists(SurpriseMeSerialization.tempFilePath());
+            java.nio.file.Files.deleteIfExists(SurpriseMeSerialization.newFilePath());
         } catch (Exception e) {
             // Ignore if files do not exist
         }
