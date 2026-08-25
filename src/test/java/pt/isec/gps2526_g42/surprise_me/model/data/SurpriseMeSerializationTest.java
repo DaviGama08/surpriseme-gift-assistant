@@ -152,6 +152,48 @@ class SurpriseMeSerializationTest {
     }
 
     @Test
+    void successfulSaveDeletesLeftoverTmp() throws IOException {
+        SurpriseMe stored = new SurpriseMe();
+        assertTrue(stored.register("Alice", "alice@example.com", "password123"));
+        SurpriseMeSerialization.save(stored);
+
+        Path primary = SurpriseMeSerialization.dataFilePath();
+        Files.copy(primary, SurpriseMeSerialization.tempFilePath());
+        assertTrue(Files.exists(SurpriseMeSerialization.tempFilePath()));
+
+        stored.addEnjoyer(validEnjoyer("AfterSave"));
+        SurpriseMeSerialization.save(stored);
+
+        assertTrue(Files.notExists(SurpriseMeSerialization.tempFilePath()));
+    }
+
+    @Test
+    void loadPrefersLeftoverNewOverLeftoverTmp() throws IOException {
+        Path primary = SurpriseMeSerialization.dataFilePath();
+
+        SurpriseMe stale = new SurpriseMe();
+        assertTrue(stale.register("StaleUser", "stale@example.com", "password123"));
+        SurpriseMeSerialization.save(stale);
+        byte[] staleBytes = Files.readAllBytes(primary);
+
+        SurpriseMe newer = new SurpriseMe();
+        assertTrue(newer.register("NewUser", "new@example.com", "password123"));
+        SurpriseMeSerialization.save(newer);
+        Files.copy(primary, SurpriseMeSerialization.newFilePath());
+        Files.write(SurpriseMeSerialization.tempFilePath(), staleBytes);
+        try {
+            Files.deleteIfExists(primary);
+        } catch (IOException ex) {
+            Files.writeString(primary, "unreadable-primary");
+        }
+
+        SurpriseMe recovered = SurpriseMeSerialization.load();
+        assertTrue(recovered.login("new@example.com", "password123"));
+        assertEquals("NewUser", recovered.getUserDetails().getName());
+        assertTrue(Files.notExists(SurpriseMeSerialization.tempFilePath()));
+    }
+
+    @Test
     void deserializationFilterRejectsUnexpectedClasses() throws Exception {
         Path unexpectedFile = SurpriseMeSerialization.dataDirectory().resolve("unexpected.ser");
         try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(unexpectedFile))) {

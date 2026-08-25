@@ -47,6 +47,7 @@ public class SurpriseMeSerialization {
             }
             moveReplacing(staging, primary);
             primaryIsReadable = true;
+            deleteLeftoverTmp();
         } catch (Exception ex) {
             System.err.println("[SM Serialization] Could not save the local data file");
             try {
@@ -72,11 +73,10 @@ public class SurpriseMeSerialization {
         }
         primaryIsReadable = false;
 
-        Path[] stagingCandidates = {tmp, newFilePath()};
+        Path[] stagingCandidates = {newFilePath(), tmp};
         for (Path staging : stagingCandidates) {
             loaded = tryLoad(staging);
             if (loaded != null) {
-                // Move recovered bytes onto primary so the next save cannot truncate them.
                 installRecoveredPrimary(staging, primary);
                 return loaded;
             }
@@ -160,8 +160,16 @@ public class SurpriseMeSerialization {
         try {
             moveReplacing(source, primary);
             primaryIsReadable = true;
+            deleteLeftoverTmp();
         } catch (IOException ignored) {
             // In-memory state is already recovered; source remains a load candidate.
+        }
+    }
+
+    private static void deleteLeftoverTmp() {
+        try {
+            Files.deleteIfExists(tempFilePath());
+        } catch (IOException ignored) {
         }
     }
 
