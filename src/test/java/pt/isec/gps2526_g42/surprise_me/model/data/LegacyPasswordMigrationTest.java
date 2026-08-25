@@ -7,6 +7,7 @@ import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
 import pt.isec.gps2526_g42.surprise_me.persistence.SurpriseMeSerialization;
 import pt.isec.gps2526_g42.surprise_me.security.PasswordHasher;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,12 +35,7 @@ class LegacyPasswordMigrationTest {
         seedAccountWithStoredPassword(sha3Hex(PASSWORD));
         assertTrue(storedPasswordHash().matches("(?i)[0-9a-f]{64}"));
 
-        loginAndReload(PASSWORD);
-
-        String migrated = storedPasswordHash();
-        assertTrue(migrated.startsWith("pbkdf2-sha256$210000$"));
-        assertFalse(PasswordHasher.needsRehash(migrated));
-        assertTrue(PasswordHasher.verify(PASSWORD, migrated));
+        assertLoginPersistsMigratedHash(PASSWORD);
 
         SurpriseMeManager reloaded = manager();
         assertTrue(reloaded.login(EMAIL, PASSWORD));
@@ -51,13 +47,8 @@ class LegacyPasswordMigrationTest {
         seedAccountWithStoredPassword(PASSWORD);
         assertEquals(PASSWORD, storedPasswordHash());
 
-        loginAndReload(PASSWORD);
-
-        String migrated = storedPasswordHash();
-        assertTrue(migrated.startsWith("pbkdf2-sha256$210000$"));
-        assertNotEquals(PASSWORD, migrated);
-        assertFalse(PasswordHasher.needsRehash(migrated));
-        assertTrue(PasswordHasher.verify(PASSWORD, migrated));
+        assertLoginPersistsMigratedHash(PASSWORD);
+        assertNotEquals(PASSWORD, storedPasswordHash());
 
         SurpriseMeManager reloaded = manager();
         assertTrue(reloaded.login(EMAIL, PASSWORD));
@@ -74,11 +65,15 @@ class LegacyPasswordMigrationTest {
         SurpriseMeSerialization.save(data);
     }
 
-    private static void loginAndReload(String password) {
+    private static void assertLoginPersistsMigratedHash(String password) throws Exception {
         SurpriseMeManager manager = manager();
         assertTrue(manager.login(EMAIL, password));
         assertNotNull(manager.getUserDetails());
-        manager.logout();
+
+        String migrated = storedPasswordHash();
+        assertTrue(migrated.startsWith("pbkdf2-sha256$210000$"));
+        assertFalse(PasswordHasher.needsRehash(migrated));
+        assertTrue(PasswordHasher.verify(password, migrated));
     }
 
     private static SurpriseMeManager manager() {
@@ -114,8 +109,7 @@ class LegacyPasswordMigrationTest {
             Files.deleteIfExists(SurpriseMeSerialization.backupFilePath());
             Files.deleteIfExists(SurpriseMeSerialization.tempFilePath());
             Files.deleteIfExists(SurpriseMeSerialization.newFilePath());
-        } catch (Exception ignored) {
-            // Ignore if files do not exist
+        } catch (IOException ignored) {
         }
     }
 }
