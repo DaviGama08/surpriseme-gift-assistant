@@ -235,7 +235,7 @@ public class GiftDetailsModal extends Stage {
         btnClose.setOnAction(e -> {
             if (btnSave.isDisable())
                 this.close();
-            else if (OkCancelModal.show(this, "Close gift details", "Do you want to exit? You'll loose all unsaved data!")) {
+            else if (OkCancelModal.show(this, "Close gift details", "Do you want to exit? You'll lose all unsaved data.")) {
                 this.close();
             }
         });
