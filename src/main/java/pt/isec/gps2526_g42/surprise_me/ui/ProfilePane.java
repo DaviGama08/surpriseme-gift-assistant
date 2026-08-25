@@ -18,11 +18,11 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
-import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeManager;
-import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeSerialization;
+import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
+import pt.isec.gps2526_g42.surprise_me.persistence.SurpriseMeSerialization;
 import pt.isec.gps2526_g42.surprise_me.model.data.UserDetails;
-import pt.isec.gps2526_g42.surprise_me.ui.dialogsViews.ChoiceModal;
-import pt.isec.gps2526_g42.surprise_me.ui.dialogsViews.MessageModal;
+import pt.isec.gps2526_g42.surprise_me.ui.dialogs.ChoiceModal;
+import pt.isec.gps2526_g42.surprise_me.ui.dialogs.MessageModal;
 import pt.isec.gps2526_g42.surprise_me.ui.res.FontManager;
 
 import java.io.File;

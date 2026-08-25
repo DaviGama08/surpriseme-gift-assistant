@@ -4,7 +4,7 @@ import pt.isec.gps2526_g42.surprise_me.model.Feedback;
 import pt.isec.gps2526_g42.surprise_me.model.Occasion;
 import pt.isec.gps2526_g42.surprise_me.model.Status;
 import pt.isec.gps2526_g42.surprise_me.model.Type;
-import pt.isec.gps2526_g42.surprise_me.model.security.PasswordHasher;
+import pt.isec.gps2526_g42.surprise_me.security.PasswordHasher;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -28,7 +28,7 @@ public class SurpriseMe implements Serializable {
         this.users = new HashMap<>();
     }
 
-    void updateNextId() {
+    public void updateNextId() {
         int lastUserId = 0;
         for (User user : users.values()) {
             if(user.getIdUser() > lastUserId) {
@@ -57,7 +57,7 @@ public class SurpriseMe implements Serializable {
 
     /* --- METHODS FOR USER --- */
 
-    boolean login(String email, String password) {
+    public boolean login(String email, String password) {
         passwordHashMigrated = false;
         if (loggedUser == -1 && email != null && password != null) {
             for (User user : users.values()) {
@@ -77,13 +77,13 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    boolean consumePasswordHashMigration() {
+    public boolean consumePasswordHashMigration() {
         boolean migrated = passwordHashMigrated;
         passwordHashMigrated = false;
         return migrated;
     }
 
-    boolean register(String name, String email, String password) {
+    public boolean register(String name, String email, String password) {
         if (loggedUser == -1 && name != null && !name.isBlank() && email != null && !email.isBlank()
                 && isAcceptablePassword(password)) {
             if (emailTakenByAnotherUser(email, -1)) {
@@ -97,11 +97,11 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    void logout() {
+    public void logout() {
         loggedUser = -1;
     }
 
-    UserDetails getUserDetails() {
+    public UserDetails getUserDetails() {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -111,7 +111,7 @@ public class SurpriseMe implements Serializable {
         return null;
     }
 
-    boolean setUserDetails(UserDetails userDetails) {
+    public boolean setUserDetails(UserDetails userDetails) {
         if (loggedUser > 0 && userDetails != null) {
             User user = users.get(loggedUser);
             if (user == null) {
@@ -158,7 +158,7 @@ public class SurpriseMe implements Serializable {
 
     /* --- METHODS FOR USER ENJOYERS --- */
 
-    boolean addEnjoyer(EnjoyerDetails details) {
+    public boolean addEnjoyer(EnjoyerDetails details) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -168,7 +168,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    HashMap<Integer, EnjoyerDetails> getEnjoyers() {
+    public HashMap<Integer, EnjoyerDetails> getEnjoyers() {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -178,7 +178,7 @@ public class SurpriseMe implements Serializable {
         return null;
     }
 
-    int getSurprisedEnjoyers() {
+    public int getSurprisedEnjoyers() {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -188,7 +188,7 @@ public class SurpriseMe implements Serializable {
         return 0;
     }
 
-    boolean editEnjoyer(int idEnjoyer, EnjoyerDetails details) {
+    public boolean editEnjoyer(int idEnjoyer, EnjoyerDetails details) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -198,7 +198,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    boolean removeEnjoyer(int idEnjoyer) {
+    public boolean removeEnjoyer(int idEnjoyer) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -210,7 +210,7 @@ public class SurpriseMe implements Serializable {
 
     /* --- METHODS FOR USER GIFTS --- */
 
-    boolean addGift(int enjoyerId, String name, Type type, Occasion occasion) {
+    public boolean addGift(int enjoyerId, String name, Type type, Occasion occasion) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -220,7 +220,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    boolean editGift(int idGift, Feedback feedback, Status status) {
+    public boolean editGift(int idGift, Feedback feedback, Status status) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -230,7 +230,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    boolean setGiftMessage(int giftId, String giftMessage) {
+    public boolean setGiftMessage(int giftId, String giftMessage) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -240,7 +240,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    ArrayList<Gift> getGifts() {
+    public ArrayList<Gift> getGifts() {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -250,7 +250,7 @@ public class SurpriseMe implements Serializable {
         return null;
     }
 
-    ArrayList<Gift> getGiftsForEnjoyer(int enjoyerId) {
+    public ArrayList<Gift> getGiftsForEnjoyer(int enjoyerId) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -262,7 +262,7 @@ public class SurpriseMe implements Serializable {
 
     /* --- METHODS FOR USER EVENTS --- */
 
-    boolean addEvent(String name, LocalDate date, Occasion occasion, int enjoyerId) {
+    public boolean addEvent(String name, LocalDate date, Occasion occasion, int enjoyerId) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -272,7 +272,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    boolean editEvent(int eventId, String name, LocalDate date, Occasion occasion, int enjoyerId) {
+    public boolean editEvent(int eventId, String name, LocalDate date, Occasion occasion, int enjoyerId) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -282,7 +282,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    boolean removeEvent(int eventId) {
+    public boolean removeEvent(int eventId) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -292,7 +292,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    List<Integer> getMonthlyEventsIds(LocalDate monthFirstDay) {
+    public List<Integer> getMonthlyEventsIds(LocalDate monthFirstDay) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -302,7 +302,7 @@ public class SurpriseMe implements Serializable {
         return new ArrayList<>();
     }
 
-    List<Event> getMonthlyEvents(LocalDate monthFirstDay) {
+    public List<Event> getMonthlyEvents(LocalDate monthFirstDay) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -312,7 +312,7 @@ public class SurpriseMe implements Serializable {
         return new ArrayList<>();
     }
 
-    String getEventNameById(int idEvent) {
+    public String getEventNameById(int idEvent) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -322,7 +322,7 @@ public class SurpriseMe implements Serializable {
         return null;
     }
 
-    LocalDate getEventDateById(int idEvent) {
+    public LocalDate getEventDateById(int idEvent) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -332,7 +332,7 @@ public class SurpriseMe implements Serializable {
         return null;
     }
 
-    Occasion getEventOccasionById(int idEvent) {
+    public Occasion getEventOccasionById(int idEvent) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -342,7 +342,7 @@ public class SurpriseMe implements Serializable {
         return null;
     }
 
-    String getEventEnjoyerNameById(int idEvent) {
+    public String getEventEnjoyerNameById(int idEvent) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -352,7 +352,7 @@ public class SurpriseMe implements Serializable {
         return null;
     }
 
-    boolean hasEvent(Occasion occasion, LocalDate date, Integer enjoyerId) {
+    public boolean hasEvent(Occasion occasion, LocalDate date, Integer enjoyerId) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -362,7 +362,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    boolean hasDeletedEvent(Occasion occasion, LocalDate date, Integer enjoyerId) {
+    public boolean hasDeletedEvent(Occasion occasion, LocalDate date, Integer enjoyerId) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {
@@ -372,7 +372,7 @@ public class SurpriseMe implements Serializable {
         return false;
     }
 
-    List<Integer> getEventIdsByOccasion(Occasion occasion) {
+    public List<Integer> getEventIdsByOccasion(Occasion occasion) {
         if (loggedUser > 0) {
             User user = users.get(loggedUser);
             if (user != null) {

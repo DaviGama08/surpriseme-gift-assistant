@@ -11,7 +11,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeManager;
+import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
 import pt.isec.gps2526_g42.surprise_me.ui.res.FontManager;
 import pt.isec.gps2526_g42.surprise_me.ui.res.ImageManager;
 

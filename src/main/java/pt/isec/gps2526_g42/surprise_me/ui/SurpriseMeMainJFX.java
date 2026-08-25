@@ -6,8 +6,8 @@ import javafx.scene.Scene;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.geometry.Rectangle2D;
-import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeManager;
-import pt.isec.gps2526_g42.surprise_me.ui.dialogsViews.OkCancelModal;
+import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
+import pt.isec.gps2526_g42.surprise_me.ui.dialogs.OkCancelModal;
 import pt.isec.gps2526_g42.surprise_me.ui.res.ImageManager;
 
 public class SurpriseMeMainJFX extends Application {

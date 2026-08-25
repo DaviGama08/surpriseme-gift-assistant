@@ -8,8 +8,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeManager;
-import pt.isec.gps2526_g42.surprise_me.ui.dialogsViews.OkCancelModal;
+import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
+import pt.isec.gps2526_g42.surprise_me.ui.dialogs.OkCancelModal;
 import pt.isec.gps2526_g42.surprise_me.ui.res.FontManager;
 
 import static pt.isec.gps2526_g42.surprise_me.ui.UIPropertyChangeManager.*;

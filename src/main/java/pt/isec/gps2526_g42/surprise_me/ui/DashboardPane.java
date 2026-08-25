@@ -13,7 +13,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import pt.isec.gps2526_g42.surprise_me.model.data.Event;
-import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeManager;
+import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
 import pt.isec.gps2526_g42.surprise_me.ui.res.FontManager;
 import pt.isec.gps2526_g42.surprise_me.ui.res.ImageManager;
 

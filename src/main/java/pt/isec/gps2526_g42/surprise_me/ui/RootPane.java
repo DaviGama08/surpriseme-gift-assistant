@@ -2,11 +2,11 @@ package pt.isec.gps2526_g42.surprise_me.ui;
 
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import pt.isec.gps2526_g42.surprise_me.model.data.SurpriseMeManager;
-import pt.isec.gps2526_g42.surprise_me.ui.eventsViews.EventsPane;
-import pt.isec.gps2526_g42.surprise_me.ui.giftsViews.GiftsPane;
-import pt.isec.gps2526_g42.surprise_me.ui.enjoyerViews.EnjoyersPane;
-import pt.isec.gps2526_g42.surprise_me.ui.giftSuggestionViews.components.GenerateGiftsPane;
+import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
+import pt.isec.gps2526_g42.surprise_me.ui.events.EventsPane;
+import pt.isec.gps2526_g42.surprise_me.ui.gifts.GiftsPane;
+import pt.isec.gps2526_g42.surprise_me.ui.enjoyers.EnjoyersPane;
+import pt.isec.gps2526_g42.surprise_me.ui.suggestions.components.GenerateGiftsPane;
 
 import static pt.isec.gps2526_g42.surprise_me.ui.UIPropertyChangeManager.PROP_SHOW_ENJOYERS;
 import static pt.isec.gps2526_g42.surprise_me.ui.UIPropertyChangeManager.PROP_SHOW_GENERATE_GIFTS;

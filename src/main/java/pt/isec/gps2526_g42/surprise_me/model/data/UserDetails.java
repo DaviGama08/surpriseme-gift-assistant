@@ -52,7 +52,7 @@ public class UserDetails implements Serializable {
         return email;
     }
 
-    String getPasswordHash() {
+    public String getPasswordHash() {
         return password;
     }
 

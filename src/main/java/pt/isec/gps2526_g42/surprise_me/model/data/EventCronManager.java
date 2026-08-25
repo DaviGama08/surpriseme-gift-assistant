@@ -1,5 +1,6 @@
 package pt.isec.gps2526_g42.surprise_me.model.data;
 
+import pt.isec.gps2526_g42.surprise_me.application.SurpriseMeManager;
 import pt.isec.gps2526_g42.surprise_me.model.Occasion;
 
 import java.time.LocalDate;
